@@ -28,8 +28,8 @@ function Dashboard() {
       {/* Top nav */}
       <header className="px-4 pt-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-white shadow-sm">
                   <img src={logoImage} alt="GTM Dashboard" className="h-8 w-8 object-contain" />
@@ -57,7 +57,7 @@ function Dashboard() {
               </nav>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 lg:justify-end">
               <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-sm">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Data</p>
                 <p className="mt-1 font-medium text-slate-700">
