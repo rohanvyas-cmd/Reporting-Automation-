@@ -1,0 +1,113 @@
+# HubSpot Reporting Dashboard
+
+A read-only full-stack dashboard for visualizing HubSpot deals with geography and lifecycle-stage breakdowns.
+
+## Stack
+- **Frontend:** React (Vite) + Tailwind CSS + Recharts
+- **Backend:** Node.js + Express + `@hubspot/api-client`
+
+---
+
+## 1. Get a HubSpot Private App Access Token
+
+1. Log in to HubSpot → **Settings** (gear icon, top right)
+2. Go to **Integrations → Private Apps**
+3. Click **Create a private app**
+4. Give it a name (e.g. "Reporting Dashboard")
+5. Under **Scopes**, add read access to **CRM → Deals**
+6. Click **Create app** → copy the generated access token
+
+---
+
+## 2. Configure the `.env` File
+
+```bash
+cp .env.example .env
+```
+
+Edit the project-root `.env` file and paste your token:
+
+```
+HUBSPOT_ACCESS_TOKEN=pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+PORT=3001
+```
+
+---
+
+## 3. Customize the Deal Stage Mapping
+
+Edit `server/config/stageMapping.js`.
+
+Map each HubSpot deal stage ID (lowercase) to a lifecycle category:
+
+| Category     | Meaning                                     |
+|--------------|---------------------------------------------|
+| `MQL`        | Marketing Qualified Lead                    |
+| `SAL`        | Sales Accepted Lead                         |
+| `SQL`        | Sales Qualified Lead                        |
+| `Active`     | Open deal not in a closed stage             |
+| `CLOSED_WON` | Won — excluded from Active count            |
+| `CLOSED_LOST`| Lost — excluded from Active count           |
+
+To find your stage IDs: HubSpot → Settings → CRM → Deals → Pipelines (hover a stage to see its ID), or call:
+
+```
+GET https://api.hubapi.com/crm/v3/pipelines/deals
+Authorization: Bearer <your_token>
+```
+
+---
+
+## 4. Customize the Geography Mapping
+
+Edit `server/config/geoMapping.js`.
+
+**Step 1 — Set the property name:**
+```js
+export const GEO_PROPERTY_NAME = 'country'; // or 'hs_deal_country', or a custom property
+```
+
+**Step 2 — Map raw values to geography codes:**
+```js
+export const GEO_VALUE_MAP = {
+  'india': 'IN',
+  'in': 'IN',
+  'united states': 'US',
+  'us': 'US',
+  // add more as needed
+};
+```
+Keys must be lowercase. Values must be `'IN'` or `'US'`. Deals with unmapped values show as `Unknown`.
+
+---
+
+## 5. Run the App
+
+**Install all dependencies:**
+```bash
+npm install               # installs concurrently at root
+npm run install:all       # installs server + client dependencies
+```
+
+**Run both dev servers concurrently:**
+```bash
+npm run dev
+```
+
+Or run separately:
+```bash
+npm run dev:server   # http://localhost:3001
+npm run dev:client   # http://localhost:5173
+```
+
+If you change `.env` while `npm run dev` is running, the backend will restart automatically. If you use `npm run start`, restart the server manually after any env change.
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+---
+
+## Architecture Notes
+
+- The frontend never calls HubSpot directly — all requests go through the Express server.
+- Deal data is cached in memory for 5 minutes. Click **Refresh Data** to force a re-fetch.
+- The app is strictly read-only — no writes, updates, or deletes are performed.
