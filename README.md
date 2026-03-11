@@ -111,3 +111,34 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 - The frontend never calls HubSpot directly — all requests go through the Express server.
 - Deal data is cached in memory for 5 minutes. Click **Refresh Data** to force a re-fetch.
 - The app is strictly read-only — no writes, updates, or deletes are performed.
+
+---
+
+## Deployment (Railway + Vercel)
+
+### 1) Deploy the backend to Railway
+1. Create a new Railway project from this GitHub repo.
+2. Set the **root directory** to `server`.
+3. Set the **start command** to `npm start`.
+4. Add environment variables:
+   - `HUBSPOT_ACCESS_TOKEN`
+   - `GOOGLE_CLIENT_ID`
+   - `JWT_SECRET`
+   - `ALLOWED_EMAILS` (comma-separated)
+   - `CORS_ORIGINS` (your Vercel domain, e.g. `https://your-app.vercel.app`)
+5. Deploy and copy the public Railway URL.
+
+### 2) Deploy the frontend to Vercel
+1. Import the repo into Vercel.
+2. Set the **root directory** to `client`.
+3. Add environment variables:
+   - `VITE_GOOGLE_CLIENT_ID`
+   - `VITE_API_BASE_URL` (your Railway URL, e.g. `https://your-app.up.railway.app`)
+4. Build command: `npm run build`
+5. Output directory: `dist`
+6. Deploy.
+
+### 3) Verify
+1. Open the Vercel URL.
+2. Sign in via Google.
+3. Click **Refresh Data** to confirm the Railway API is reachable.

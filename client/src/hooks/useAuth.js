@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { apiPath } from '../utils/api.js';
 
 const TOKEN_KEY = 'gtm_auth_token';
 const USER_KEY = 'gtm_auth_user';
@@ -38,7 +39,7 @@ export function useAuth() {
   }, []);
 
   const signIn = useCallback(async (googleIdToken) => {
-    const res = await fetch('/auth/verify', {
+    const res = await fetch(apiPath('/auth/verify'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken: googleIdToken }),

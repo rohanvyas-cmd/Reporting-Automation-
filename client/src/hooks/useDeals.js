@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getToken } from './useAuth.js';
+import { apiPath } from '../utils/api.js';
 
 export function useDeals() {
   const [deals, setDeals] = useState([]);
@@ -11,7 +12,7 @@ export function useDeals() {
     setLoading(true);
     setError(null);
     try {
-      const url = `/api/deals${forceRefresh ? '?refresh=true' : ''}`;
+      const url = apiPath(`/api/deals${forceRefresh ? '?refresh=true' : ''}`);
       const token = getToken();
       const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
