@@ -28,8 +28,8 @@ function Dashboard() {
       {/* Top nav */}
       <header className="px-4 pt-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
-          <div className="flex flex-col gap-4 md:grid md:grid-cols-3 md:items-center md:gap-6">
-            <div className="flex items-center gap-3 min-w-0 md:justify-self-start">
+          <div className="flex flex-col gap-4 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-6">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-white shadow-sm">
                 <img src={logoImage} alt="GTM Dashboard" className="h-8 w-8 object-contain" />
               </div>
@@ -39,7 +39,7 @@ function Dashboard() {
               </div>
             </div>
 
-            <nav className="flex flex-wrap justify-start gap-2 rounded-lg border border-blue-100 bg-blue-50 p-1 md:justify-center md:justify-self-center">
+            <nav className="flex flex-wrap justify-start gap-2 rounded-lg border border-blue-100 bg-blue-50 p-1 md:justify-center md:place-self-center">
               {TABS.map((tab) => (
                 <button
                   key={tab}
@@ -55,7 +55,7 @@ function Dashboard() {
               ))}
             </nav>
 
-            <div className="flex flex-wrap items-center gap-3 md:flex-nowrap md:justify-end md:justify-self-end min-w-0">
+            <div className="flex flex-wrap items-center gap-3 md:flex-nowrap md:justify-end min-w-0">
               <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-sm whitespace-nowrap">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Data</p>
                 <p className="mt-1 font-medium text-slate-700">
