@@ -205,6 +205,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
   const showLeadSourceTracker = false;
   const [activeTab, setActiveTab] = useState('funnel'); // 'funnel' | 'channels'
   const [channelMode, setChannelMode] = useState('quarter'); // 'quarter' | 'all'
+  const [kpiMode, setKpiMode] = useState('quarter'); // 'quarter' | 'all'
   const {
     filtered,
     quarterDeals,
@@ -231,6 +232,20 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
     return buildChannelSummary(dataset).filter((c) => c.total > 0);
   }, [channelMode, quarterDeals, filtered]);
   const channelMax = useMemo(() => Math.max(1, ...channelSummary.map((c) => c.total)), [channelSummary]);
+  const kpi = useMemo(() => {
+    if (kpiMode === 'quarter') {
+      return {
+        label: quarterLabel,
+        summary: quarterSummary,
+        metrics: quarterMetrics,
+      };
+    }
+    return {
+      label: 'All Time',
+      summary: allTimeSummary,
+      metrics: allTimeMetrics,
+    };
+  }, [kpiMode, quarterLabel, quarterSummary, quarterMetrics, allTimeSummary, allTimeMetrics]);
 
   return (
     <div className="space-y-8 pb-6">
@@ -245,36 +260,50 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
       </div>
 
       <div className="space-y-6">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Executive Snapshot
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Key KPIs for <span className="font-semibold text-slate-700">{geo}</span>.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+            <button
+              onClick={() => setKpiMode('quarter')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                kpiMode === 'quarter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {quarterLabel}
+            </button>
+            <button
+              onClick={() => setKpiMode('all')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                kpiMode === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              All Time
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <ExecutiveStatCard
             label="Deals Created"
-            value={quarterSummary.total}
-            context={quarterLabel}
+            value={kpi.summary.total}
+            context={kpi.label}
           />
           <ExecutiveStatCard
             label="Active Deals"
-            value={quarterMetrics.active}
-            context={`${quarterMetrics.active} / ${quarterSummary.total} active (${quarterMetrics.activeRate}%) • ${quarterLabel}`}
+            value={kpi.metrics.active}
+            context={`${kpi.metrics.active} / ${kpi.summary.total} active (${kpi.metrics.activeRate}%) • ${kpi.label}`}
           />
           <ExecutiveStatCard
             label="Win Rate"
-            value={`${quarterMetrics.winRate}%`}
-            context={`${quarterSummary['Deal Won']} / ${quarterSummary.total} won • ${quarterLabel}`}
-          />
-          <ExecutiveStatCard
-            label="Total Deals Created"
-            value={allTimeSummary.total}
-            context="All time (selected geo)"
-          />
-          <ExecutiveStatCard
-            label="Total Active Deals"
-            value={allTimeMetrics.active}
-            context={`${allTimeMetrics.active} / ${allTimeSummary.total} active (${allTimeMetrics.activeRate}%) • All time`}
-          />
-          <ExecutiveStatCard
-            label="Total Win Rate"
-            value={`${allTimeMetrics.winRate}%`}
-            context={`${allTimeSummary['Deal Won']} / ${allTimeSummary.total} won • All time`}
+            value={`${kpi.metrics.winRate}%`}
+            context={`${kpi.summary['Deal Won']} / ${kpi.summary.total} won • ${kpi.label}`}
           />
         </div>
 
