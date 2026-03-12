@@ -60,14 +60,16 @@ const STAGE_TO_BUCKET = {
   '244798995': 'Deal Won',
 };
 
-export const CHANNEL_ORDER = ['Inbound', 'Outbound', 'Events', 'Sales', 'Other', 'Unknown'];
+export const CHANNEL_ORDER = ['Inbound', 'Outbound', 'Events', 'Sales', 'Referral', 'Consultants', 'Partnership', 'Unknown'];
 
 export const CHANNEL_COLORS = {
   Inbound: '#2563eb',
   Outbound: '#f97316',
   Events: '#9333ea',
   Sales: '#16a34a',
-  Other: '#64748b',
+  Referral: '#0f766e',
+  Consultants: '#64748b',
+  Partnership: '#db2777',
   Unknown: '#94a3b8',
 };
 

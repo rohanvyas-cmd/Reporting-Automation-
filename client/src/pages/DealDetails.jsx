@@ -23,14 +23,16 @@ const COLUMNS = [
   { key: 'hs_lastmodifieddate', label: 'Last Modified' },
 ];
 
-const CHANNELS = ['Inbound', 'Outbound', 'Events', 'Sales', 'Other'];
+const CHANNELS = ['Inbound', 'Outbound', 'Events', 'Sales', 'Referral', 'Consultants', 'Partnership'];
 
 const CHANNEL_COLORS = {
   Inbound:  { active: 'border-blue-600 bg-blue-600 text-white',   inactive: 'border-blue-300 bg-white text-blue-600 hover:bg-blue-50' },
   Outbound: { active: 'border-orange-600 bg-orange-600 text-white', inactive: 'border-orange-300 bg-white text-orange-600 hover:bg-orange-50' },
   Events:   { active: 'border-purple-600 bg-purple-600 text-white', inactive: 'border-purple-300 bg-white text-purple-600 hover:bg-purple-50' },
   Sales:    { active: 'border-green-600 bg-green-600 text-white',  inactive: 'border-green-300 bg-white text-green-600 hover:bg-green-50' },
-  Other:    { active: 'border-gray-600 bg-gray-600 text-white',   inactive: 'border-gray-300 bg-white text-gray-600 hover:bg-gray-100' },
+  Referral: { active: 'border-teal-700 bg-teal-700 text-white',    inactive: 'border-teal-300 bg-white text-teal-700 hover:bg-teal-50' },
+  Consultants: { active: 'border-slate-700 bg-slate-700 text-white', inactive: 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50' },
+  Partnership: { active: 'border-pink-700 bg-pink-700 text-white', inactive: 'border-pink-300 bg-white text-pink-700 hover:bg-pink-50' },
 };
 
 const STATUS_GROUPS = {

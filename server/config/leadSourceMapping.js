@@ -31,8 +31,9 @@ const CHANNEL_MAP = {
   'Event Marketing': 'Events',
   'Event Sales': 'Events',
   'Sales': 'Sales',
-  'Client Referral': 'Other',
-  'Consultants': 'Other',
+  'Client Referral': 'Referral',
+  'Consultants': 'Consultants',
+  'Partnership': 'Partnership',
 };
 
 export function resolveChannel(displayLabel) {
