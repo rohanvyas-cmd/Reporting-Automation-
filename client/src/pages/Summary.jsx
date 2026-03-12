@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import GeoToggle from '../components/GeoToggle.jsx';
 import { buildChannelSummary, buildDashboardMetrics, buildIndustrySummary, CHANNEL_COLORS } from '../utils/dashboardMetrics.js';
 import DemandGenWeeklyTargetTracker from '../components/DemandGenWeeklyTargetTracker.jsx';
-import PerformanceScatter from '../components/PerformanceScatter.jsx';
+import VolumeWinChart from '../components/VolumeWinChart.jsx';
 const PHASE_ROWS = [
   { key: 'Created', label: 'Deals Created', color: '#2563eb' },
   { key: 'MQL_PLUS', label: 'Initial Interest / MQL++', color: '#16a34a' },
@@ -206,9 +206,9 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
   const showLeadSourceTracker = false;
   const [activeTab, setActiveTab] = useState('funnel'); // 'funnel' | 'channels' | 'industry'
   const [channelMode, setChannelMode] = useState('quarter'); // 'quarter' | 'all'
-  const [channelView, setChannelView] = useState('scatter'); // 'list' | 'scatter'
+  const [channelView, setChannelView] = useState('chart'); // 'list' | 'chart'
   const [industryMode, setIndustryMode] = useState('all'); // 'quarter' | 'all'
-  const [industryView, setIndustryView] = useState('scatter'); // 'list' | 'scatter'
+  const [industryView, setIndustryView] = useState('chart'); // 'list' | 'chart'
   const [kpiMode, setKpiMode] = useState('all'); // 'quarter' | 'all'
   const {
     filtered,
@@ -266,50 +266,44 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
     return [...head, { ...other, ...otherRates }];
   }, [industryMode, quarterDeals, filtered]);
   const industryMax = useMemo(() => Math.max(1, ...industrySummary.map((r) => r.total)), [industrySummary]);
-  const channelScatter = useMemo(() => {
-    const sorted = channelSummary.slice().sort((a, b) => b.total - a.total);
-    return sorted.map((row) => ({
-      name: row.channel,
-      x: row.total,
-      y: row.winRate,
-      qualifiedCount: (row.SAL ?? 0) + (row['SQL++'] ?? 0),
-      qualifiedRate: row.qualifiedRate ?? 0,
-      activeCount: row.active ?? 0,
-      activeRate: row.activeRate ?? 0,
-      color: CHANNEL_COLORS[row.channel] ?? CHANNEL_COLORS.Unknown ?? '#94a3b8',
-    }));
+  const channelChartRows = useMemo(() => {
+    return channelSummary
+      .slice()
+      .sort((a, b) => b.total - a.total)
+      .map((row) => ({
+        name: row.channel,
+        volume: row.total,
+        winRate: row.winRate ?? 0,
+        qualifiedCount: (row.SAL ?? 0) + (row['SQL++'] ?? 0),
+        qualifiedRate: row.qualifiedRate ?? 0,
+        activeCount: row.active ?? 0,
+        activeRate: row.activeRate ?? 0,
+        color: CHANNEL_COLORS[row.channel] ?? CHANNEL_COLORS.Unknown ?? '#94a3b8',
+      }));
   }, [channelSummary]);
-  const channelXRef = useMemo(() => {
-    if (channelScatter.length === 0) return null;
-    const volumes = channelScatter.map((p) => p.x).slice().sort((a, b) => a - b);
-    return volumes[Math.floor(volumes.length / 2)];
-  }, [channelScatter]);
-  const channelYRef = useMemo(() => {
+  const channelWinRef = useMemo(() => {
     if (channelSummary.length === 0) return null;
     const total = channelSummary.reduce((sum, r) => sum + (r.total ?? 0), 0);
     const won = channelSummary.reduce((sum, r) => sum + (r.won ?? 0), 0);
     return total ? Math.round((won / total) * 100) : 0;
   }, [channelSummary]);
 
-  const industryScatter = useMemo(() => {
-    const sorted = industrySummary.slice().sort((a, b) => b.total - a.total);
-    return sorted.map((row) => ({
-      name: row.industry,
-      x: row.total,
-      y: row.winRate,
-      qualifiedCount: (row.SAL ?? 0) + (row['SQL++'] ?? 0),
-      qualifiedRate: row.qualifiedRate ?? 0,
-      activeCount: row.active ?? 0,
-      activeRate: row.activeRate ?? 0,
-      color: row.industry === 'Long tail' ? '#94a3b8' : '#1d4ed8',
-    }));
+  const industryChartRows = useMemo(() => {
+    return industrySummary
+      .slice()
+      .sort((a, b) => b.total - a.total)
+      .map((row) => ({
+        name: row.industry,
+        volume: row.total,
+        winRate: row.winRate ?? 0,
+        qualifiedCount: (row.SAL ?? 0) + (row['SQL++'] ?? 0),
+        qualifiedRate: row.qualifiedRate ?? 0,
+        activeCount: row.active ?? 0,
+        activeRate: row.activeRate ?? 0,
+        color: row.industry === 'Long tail' ? '#94a3b8' : '#1d4ed8',
+      }));
   }, [industrySummary]);
-  const industryXRef = useMemo(() => {
-    if (industryScatter.length === 0) return null;
-    const volumes = industryScatter.map((p) => p.x).slice().sort((a, b) => a - b);
-    return volumes[Math.floor(volumes.length / 2)];
-  }, [industryScatter]);
-  const industryYRef = useMemo(() => {
+  const industryWinRef = useMemo(() => {
     if (industrySummary.length === 0) return null;
     const total = industrySummary.reduce((sum, r) => sum + (r.total ?? 0), 0);
     const won = industrySummary.reduce((sum, r) => sum + (r.won ?? 0), 0);
@@ -484,16 +478,16 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
               <div className="mt-4">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-xs text-slate-500">
-                    Bubble size = <span className="font-semibold text-slate-700">Qualified deals</span>.
+                    Bars = <span className="font-semibold text-slate-700">volume</span>, line = <span className="font-semibold text-slate-700">win rate</span>.
                   </p>
                   <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
                     <button
-                      onClick={() => setChannelView('scatter')}
+                      onClick={() => setChannelView('chart')}
                       className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                        channelView === 'scatter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        channelView === 'chart' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Scatter
+                      Chart
                     </button>
                     <button
                       onClick={() => setChannelView('list')}
@@ -506,9 +500,9 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
                   </div>
                 </div>
 
-                {channelView === 'scatter' ? (
+                {channelView === 'chart' ? (
                   <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-                    <PerformanceScatter points={channelScatter} xRef={channelXRef} yRef={channelYRef} />
+                    <VolumeWinChart rows={channelChartRows} winRateRef={channelWinRef} />
                   </div>
                 ) : (
                   <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -607,16 +601,16 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
               <div className="mt-4">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-xs text-slate-500">
-                    Bubble size = <span className="font-semibold text-slate-700">Qualified deals</span>.
+                    Bars = <span className="font-semibold text-slate-700">volume</span>, line = <span className="font-semibold text-slate-700">win rate</span>.
                   </p>
                   <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
                     <button
-                      onClick={() => setIndustryView('scatter')}
+                      onClick={() => setIndustryView('chart')}
                       className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                        industryView === 'scatter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        industryView === 'chart' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Scatter
+                      Chart
                     </button>
                     <button
                       onClick={() => setIndustryView('list')}
@@ -629,9 +623,9 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
                   </div>
                 </div>
 
-                {industryView === 'scatter' ? (
+                {industryView === 'chart' ? (
                   <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-                    <PerformanceScatter points={industryScatter} xRef={industryXRef} yRef={industryYRef} />
+                    <VolumeWinChart rows={industryChartRows} winRateRef={industryWinRef} />
                   </div>
                 ) : (
                   <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
