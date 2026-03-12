@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import GeoToggle from '../components/GeoToggle.jsx';
 import { buildChannelSummary, buildDashboardMetrics, buildIndustrySummary, CHANNEL_COLORS } from '../utils/dashboardMetrics.js';
 import DemandGenWeeklyTargetTracker from '../components/DemandGenWeeklyTargetTracker.jsx';
+import PerformanceScatter from '../components/PerformanceScatter.jsx';
 const PHASE_ROWS = [
   { key: 'Created', label: 'Deals Created', color: '#2563eb' },
   { key: 'MQL_PLUS', label: 'Initial Interest / MQL++', color: '#16a34a' },
@@ -205,7 +206,9 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
   const showLeadSourceTracker = false;
   const [activeTab, setActiveTab] = useState('funnel'); // 'funnel' | 'channels' | 'industry'
   const [channelMode, setChannelMode] = useState('quarter'); // 'quarter' | 'all'
+  const [channelView, setChannelView] = useState('scatter'); // 'list' | 'scatter'
   const [industryMode, setIndustryMode] = useState('all'); // 'quarter' | 'all'
+  const [industryView, setIndustryView] = useState('scatter'); // 'list' | 'scatter'
   const [kpiMode, setKpiMode] = useState('all'); // 'quarter' | 'all'
   const {
     filtered,
@@ -252,7 +255,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
         acc.MQL += row.MQL;
         return acc;
       },
-      { industry: 'Other', total: 0, active: 0, inactive: 0, won: 0, SAL: 0, 'SQL++': 0, MQL: 0 }
+      { industry: 'Long tail', total: 0, active: 0, inactive: 0, won: 0, SAL: 0, 'SQL++': 0, MQL: 0 }
     );
     const otherRates = {
       activeRate: other.total ? Math.round((other.active / other.total) * 100) : 0,
@@ -263,6 +266,55 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
     return [...head, { ...other, ...otherRates }];
   }, [industryMode, quarterDeals, filtered]);
   const industryMax = useMemo(() => Math.max(1, ...industrySummary.map((r) => r.total)), [industrySummary]);
+  const channelScatter = useMemo(() => {
+    const sorted = channelSummary.slice().sort((a, b) => b.total - a.total);
+    return sorted.map((row) => ({
+      name: row.channel,
+      x: row.total,
+      y: row.winRate,
+      qualifiedCount: (row.SAL ?? 0) + (row['SQL++'] ?? 0),
+      qualifiedRate: row.qualifiedRate ?? 0,
+      activeCount: row.active ?? 0,
+      activeRate: row.activeRate ?? 0,
+      color: CHANNEL_COLORS[row.channel] ?? CHANNEL_COLORS.Unknown ?? '#94a3b8',
+    }));
+  }, [channelSummary]);
+  const channelXRef = useMemo(() => {
+    if (channelScatter.length === 0) return null;
+    const volumes = channelScatter.map((p) => p.x).slice().sort((a, b) => a - b);
+    return volumes[Math.floor(volumes.length / 2)];
+  }, [channelScatter]);
+  const channelYRef = useMemo(() => {
+    if (channelSummary.length === 0) return null;
+    const total = channelSummary.reduce((sum, r) => sum + (r.total ?? 0), 0);
+    const won = channelSummary.reduce((sum, r) => sum + (r.won ?? 0), 0);
+    return total ? Math.round((won / total) * 100) : 0;
+  }, [channelSummary]);
+
+  const industryScatter = useMemo(() => {
+    const sorted = industrySummary.slice().sort((a, b) => b.total - a.total);
+    return sorted.map((row) => ({
+      name: row.industry,
+      x: row.total,
+      y: row.winRate,
+      qualifiedCount: (row.SAL ?? 0) + (row['SQL++'] ?? 0),
+      qualifiedRate: row.qualifiedRate ?? 0,
+      activeCount: row.active ?? 0,
+      activeRate: row.activeRate ?? 0,
+      color: row.industry === 'Long tail' ? '#94a3b8' : '#1d4ed8',
+    }));
+  }, [industrySummary]);
+  const industryXRef = useMemo(() => {
+    if (industryScatter.length === 0) return null;
+    const volumes = industryScatter.map((p) => p.x).slice().sort((a, b) => a - b);
+    return volumes[Math.floor(volumes.length / 2)];
+  }, [industryScatter]);
+  const industryYRef = useMemo(() => {
+    if (industrySummary.length === 0) return null;
+    const total = industrySummary.reduce((sum, r) => sum + (r.total ?? 0), 0);
+    const won = industrySummary.reduce((sum, r) => sum + (r.won ?? 0), 0);
+    return total ? Math.round((won / total) * 100) : 0;
+  }, [industrySummary]);
   const kpi = useMemo(() => {
     if (kpiMode === 'quarter') {
       return {
@@ -429,60 +481,92 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
                 No channel data found for this selection.
               </div>
             ) : (
-              <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                <div className="hidden md:grid md:grid-cols-[140px_1fr_260px] md:gap-3 md:border-b md:border-slate-200 md:bg-slate-50 md:px-3 md:py-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Channel</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Volume</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 text-right">Rates</p>
+              <div className="mt-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-xs text-slate-500">
+                    Bubble size = <span className="font-semibold text-slate-700">Qualified deals</span>.
+                  </p>
+                  <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                    <button
+                      onClick={() => setChannelView('scatter')}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        channelView === 'scatter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Scatter
+                    </button>
+                    <button
+                      onClick={() => setChannelView('list')}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        channelView === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      List
+                    </button>
+                  </div>
                 </div>
-                <div className="divide-y divide-slate-100">
-                  {channelSummary
-                    .slice()
-                    .sort((a, b) => b.total - a.total)
-                    .map((row) => {
-                      const barPct = Math.round((row.total / channelMax) * 100);
-                      const channelColor = CHANNEL_COLORS[row.channel] ?? CHANNEL_COLORS.Unknown ?? '#94a3b8';
-                      return (
-                        <div key={row.channel} className="px-3 py-2 hover:bg-slate-50/60">
-                          <div className="grid grid-cols-1 gap-2 md:grid-cols-[140px_1fr_260px] md:items-center md:gap-3">
-                            <div className="flex items-center justify-between md:block">
-                              <p className="text-sm font-semibold text-slate-900">{row.channel}</p>
-                              <p className="text-sm font-semibold text-slate-900 md:hidden">{row.total}</p>
-                            </div>
 
-                            <div className="flex items-center gap-3">
-                              <div className="h-2 w-full rounded-full bg-slate-100">
-                                <div
-                                  className="h-2 rounded-full"
-                                  style={{ width: `${barPct}%`, backgroundColor: channelColor }}
-                                />
+                {channelView === 'scatter' ? (
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                    <PerformanceScatter points={channelScatter} xRef={channelXRef} yRef={channelYRef} />
+                  </div>
+                ) : (
+                  <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <div className="hidden md:grid md:grid-cols-[140px_1fr_260px] md:gap-3 md:border-b md:border-slate-200 md:bg-slate-50 md:px-3 md:py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Channel</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Volume</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 text-right">Rates</p>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {channelSummary
+                        .slice()
+                        .sort((a, b) => b.total - a.total)
+                        .map((row) => {
+                          const barPct = Math.round((row.total / channelMax) * 100);
+                          const channelColor = CHANNEL_COLORS[row.channel] ?? CHANNEL_COLORS.Unknown ?? '#94a3b8';
+                          return (
+                            <div key={row.channel} className="px-3 py-2 hover:bg-slate-50/60">
+                              <div className="grid grid-cols-1 gap-2 md:grid-cols-[140px_1fr_260px] md:items-center md:gap-3">
+                                <div className="flex items-center justify-between md:block">
+                                  <p className="text-sm font-semibold text-slate-900">{row.channel}</p>
+                                  <p className="text-sm font-semibold text-slate-900 md:hidden">{row.total}</p>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <div className="h-2 w-full rounded-full bg-slate-100">
+                                    <div
+                                      className="h-2 rounded-full"
+                                      style={{ width: `${barPct}%`, backgroundColor: channelColor }}
+                                    />
+                                  </div>
+                                  <p className="hidden w-10 text-right text-sm font-semibold text-slate-900 md:block">{row.total}</p>
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-slate-600 md:justify-end">
+                                  <span>
+                                    <span className="font-semibold text-slate-900">{row.winRate}%</span> Win
+                                  </span>
+                                  <span className="text-slate-300 hidden md:inline">•</span>
+                                  <span>
+                                    <span className="font-semibold text-slate-900">{row.qualifiedRate}%</span> Qualified
+                                  </span>
+                                  <span className="text-slate-300 hidden md:inline">•</span>
+                                  <span>
+                                    <span className="font-semibold text-slate-900">{row.activeRate}%</span> Active
+                                  </span>
+                                </div>
                               </div>
-                              <p className="hidden w-10 text-right text-sm font-semibold text-slate-900 md:block">{row.total}</p>
-                            </div>
 
-                            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-slate-600 md:justify-end">
-                              <span>
-                                <span className="font-semibold text-slate-900">{row.winRate}%</span> Win
-                              </span>
-                              <span className="text-slate-300 hidden md:inline">•</span>
-                              <span>
-                                <span className="font-semibold text-slate-900">{row.qualifiedRate}%</span> Qualified
-                              </span>
-                              <span className="text-slate-300 hidden md:inline">•</span>
-                              <span>
-                                <span className="font-semibold text-slate-900">{row.activeRate}%</span> Active
-                              </span>
+                              <div className="mt-1 text-[11px] text-slate-500">
+                                {row.won} won <span className="text-slate-300">•</span> {row.active} active{' '}
+                                <span className="text-slate-300">•</span> {row.inactive} inactive
+                              </div>
                             </div>
-                          </div>
-
-                          <div className="mt-1 text-[11px] text-slate-500">
-                            {row.won} won <span className="text-slate-300">•</span> {row.active} active{' '}
-                            <span className="text-slate-300">•</span> {row.inactive} inactive
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -520,55 +604,87 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
                 No industry data found for this selection.
               </div>
             ) : (
-              <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                <div className="hidden md:grid md:grid-cols-[220px_1fr_260px] md:gap-3 md:border-b md:border-slate-200 md:bg-slate-50 md:px-3 md:py-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Industry</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Volume</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 text-right">Rates</p>
+              <div className="mt-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-xs text-slate-500">
+                    Bubble size = <span className="font-semibold text-slate-700">Qualified deals</span>.
+                  </p>
+                  <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                    <button
+                      onClick={() => setIndustryView('scatter')}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        industryView === 'scatter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Scatter
+                    </button>
+                    <button
+                      onClick={() => setIndustryView('list')}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                        industryView === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      List
+                    </button>
+                  </div>
                 </div>
-                <div className="divide-y divide-slate-100">
-                  {industrySummary.map((row) => {
-                    const barPct = Math.round((row.total / industryMax) * 100);
-                    return (
-                      <div key={row.industry} className="px-3 py-2 hover:bg-slate-50/60">
-                        <div className="grid grid-cols-1 gap-2 md:grid-cols-[220px_1fr_260px] md:items-center md:gap-3">
-                          <div className="flex items-center justify-between md:block">
-                            <p className="text-sm font-semibold text-slate-900 truncate" title={row.industry}>
-                              {row.industry}
-                            </p>
-                            <p className="text-sm font-semibold text-slate-900 md:hidden">{row.total}</p>
-                          </div>
 
-                          <div className="flex items-center gap-3">
-                            <div className="h-2 w-full rounded-full bg-slate-100">
-                              <div className="h-2 rounded-full bg-slate-700" style={{ width: `${barPct}%` }} />
+                {industryView === 'scatter' ? (
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                    <PerformanceScatter points={industryScatter} xRef={industryXRef} yRef={industryYRef} />
+                  </div>
+                ) : (
+                  <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <div className="hidden md:grid md:grid-cols-[220px_1fr_260px] md:gap-3 md:border-b md:border-slate-200 md:bg-slate-50 md:px-3 md:py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Industry</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Volume</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 text-right">Rates</p>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {industrySummary.map((row) => {
+                        const barPct = Math.round((row.total / industryMax) * 100);
+                        return (
+                          <div key={row.industry} className="px-3 py-2 hover:bg-slate-50/60">
+                            <div className="grid grid-cols-1 gap-2 md:grid-cols-[220px_1fr_260px] md:items-center md:gap-3">
+                              <div className="flex items-center justify-between md:block">
+                                <p className="text-sm font-semibold text-slate-900 truncate" title={row.industry}>
+                                  {row.industry}
+                                </p>
+                                <p className="text-sm font-semibold text-slate-900 md:hidden">{row.total}</p>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <div className="h-2 w-full rounded-full bg-slate-100">
+                                  <div className="h-2 rounded-full bg-slate-700" style={{ width: `${barPct}%` }} />
+                                </div>
+                                <p className="hidden w-10 text-right text-sm font-semibold text-slate-900 md:block">{row.total}</p>
+                              </div>
+
+                              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-slate-600 md:justify-end">
+                                <span>
+                                  <span className="font-semibold text-slate-900">{row.winRate}%</span> Win
+                                </span>
+                                <span className="text-slate-300 hidden md:inline">•</span>
+                                <span>
+                                  <span className="font-semibold text-slate-900">{row.qualifiedRate}%</span> Qualified
+                                </span>
+                                <span className="text-slate-300 hidden md:inline">•</span>
+                                <span>
+                                  <span className="font-semibold text-slate-900">{row.activeRate}%</span> Active
+                                </span>
+                              </div>
                             </div>
-                            <p className="hidden w-10 text-right text-sm font-semibold text-slate-900 md:block">{row.total}</p>
-                          </div>
 
-                          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-slate-600 md:justify-end">
-                            <span>
-                              <span className="font-semibold text-slate-900">{row.winRate}%</span> Win
-                            </span>
-                            <span className="text-slate-300 hidden md:inline">•</span>
-                            <span>
-                              <span className="font-semibold text-slate-900">{row.qualifiedRate}%</span> Qualified
-                            </span>
-                            <span className="text-slate-300 hidden md:inline">•</span>
-                            <span>
-                              <span className="font-semibold text-slate-900">{row.activeRate}%</span> Active
-                            </span>
+                            <div className="mt-1 text-[11px] text-slate-500">
+                              {row.won} won <span className="text-slate-300">•</span> {row.active} active{' '}
+                              <span className="text-slate-300">•</span> {row.inactive} inactive
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="mt-1 text-[11px] text-slate-500">
-                          {row.won} won <span className="text-slate-300">•</span> {row.active} active{' '}
-                          <span className="text-slate-300">•</span> {row.inactive} inactive
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
