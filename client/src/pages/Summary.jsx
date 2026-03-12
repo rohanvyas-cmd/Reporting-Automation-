@@ -1,7 +1,6 @@
-import { useMemo } from 'react';
-import KPICard from '../components/KPICard.jsx';
+import { useMemo, useState } from 'react';
 import GeoToggle from '../components/GeoToggle.jsx';
-import { buildDashboardMetrics, percent } from '../utils/dashboardMetrics.js';
+import { buildChannelSummary, buildDashboardMetrics, CHANNEL_COLORS } from '../utils/dashboardMetrics.js';
 import DemandGenWeeklyTargetTracker from '../components/DemandGenWeeklyTargetTracker.jsx';
 const PHASE_ROWS = [
   { key: 'Created', label: 'Deals Created', color: '#2563eb' },
@@ -183,10 +182,10 @@ function StageDistributionCard({ title, subtitle, total, counts, scaleMax }) {
 
 function ExecutiveStatCard({ label, value, context }) {
   return (
-    <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-3 text-3xl font-bold text-slate-900">{value}</p>
-      <p className="mt-2 text-sm text-slate-500">{context}</p>
+    <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-bold leading-none text-slate-900">{value}</p>
+      <p className="mt-2 text-xs text-slate-500">{context}</p>
     </div>
   );
 }
@@ -204,6 +203,8 @@ function formatCompactAmount(value) {
 
 export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
   const showLeadSourceTracker = false;
+  const [activeTab, setActiveTab] = useState('funnel'); // 'funnel' | 'channels'
+  const [channelMode, setChannelMode] = useState('quarter'); // 'quarter' | 'all'
   const {
     filtered,
     quarterDeals,
@@ -225,6 +226,11 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
   const quarterStageCounts = useMemo(() => buildDetailedStageCounts(quarterDeals), [quarterDeals]);
   const allTimeStageCounts = useMemo(() => buildDetailedStageCounts(filtered), [filtered]);
   const stageScaleMax = Math.max(quarterDeals.length, filtered.length);
+  const channelSummary = useMemo(() => {
+    const dataset = channelMode === 'quarter' ? quarterDeals : filtered;
+    return buildChannelSummary(dataset).filter((c) => c.total > 0);
+  }, [channelMode, quarterDeals, filtered]);
+  const channelMax = useMemo(() => Math.max(1, ...channelSummary.map((c) => c.total)), [channelSummary]);
 
   return (
     <div className="space-y-8 pb-6">
@@ -239,51 +245,173 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
       </div>
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <ExecutiveStatCard
             label="Deals Created"
             value={quarterSummary.total}
             context={quarterLabel}
           />
           <ExecutiveStatCard
-            label="Active Rate"
-            value={`${quarterMetrics.activeRate}%`}
-            context={`${quarterMetrics.active} deals currently active`}
+            label="Active Deals"
+            value={quarterMetrics.active}
+            context={`${quarterMetrics.active} / ${quarterSummary.total} active (${quarterMetrics.activeRate}%) • ${quarterLabel}`}
           />
           <ExecutiveStatCard
             label="Win Rate"
             value={`${quarterMetrics.winRate}%`}
-            context={`${quarterSummary['Deal Won']} deals closed this quarter`}
+            context={`${quarterSummary['Deal Won']} / ${quarterSummary.total} won • ${quarterLabel}`}
+          />
+          <ExecutiveStatCard
+            label="Total Deals Created"
+            value={allTimeSummary.total}
+            context="All time (selected geo)"
+          />
+          <ExecutiveStatCard
+            label="Total Active Deals"
+            value={allTimeMetrics.active}
+            context={`${allTimeMetrics.active} / ${allTimeSummary.total} active (${allTimeMetrics.activeRate}%) • All time`}
+          />
+          <ExecutiveStatCard
+            label="Total Win Rate"
+            value={`${allTimeMetrics.winRate}%`}
+            context={`${allTimeSummary['Deal Won']} / ${allTimeSummary.total} won • All time`}
           />
         </div>
 
       </div>
 
       <div>
-        <div className="mb-3">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-            Funnel View
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Stage distribution with aligned scales for fast comparison.
-          </p>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Insights
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Funnel view and channel performance for the selected geography.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-1 rounded-xl border border-blue-100 bg-white p-1 shadow-sm">
+            <button
+              onClick={() => setActiveTab('funnel')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                activeTab === 'funnel' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Funnel View
+            </button>
+            <button
+              onClick={() => setActiveTab('channels')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                activeTab === 'channels' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Channel Split
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <StageDistributionCard
-            title={quarterLabel}
-            subtitle="Stage distribution of quarter-created deals."
-            total={quarterDeals.length}
-            counts={quarterStageCounts}
-            scaleMax={stageScaleMax}
-          />
-          <StageDistributionCard
-            title="All Time"
-            subtitle="Stage distribution across all created deals."
-            total={filtered.length}
-            counts={allTimeStageCounts}
-            scaleMax={stageScaleMax}
-          />
-        </div>
+
+        {activeTab === 'funnel' ? (
+          <div className="mt-4 grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <StageDistributionCard
+              title={quarterLabel}
+              subtitle="Stage distribution of quarter-created deals."
+              total={quarterDeals.length}
+              counts={quarterStageCounts}
+              scaleMax={stageScaleMax}
+            />
+            <StageDistributionCard
+              title="All Time"
+              subtitle="Stage distribution across all created deals."
+              total={filtered.length}
+              counts={allTimeStageCounts}
+              scaleMax={stageScaleMax}
+            />
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Channel Split</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Compare which acquisition channels perform best for <span className="font-semibold text-slate-700">{geo}</span>.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                <button
+                  onClick={() => setChannelMode('quarter')}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    channelMode === 'quarter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {quarterLabel}
+                </button>
+                <button
+                  onClick={() => setChannelMode('all')}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    channelMode === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  All Time
+                </button>
+              </div>
+            </div>
+
+            {channelSummary.length === 0 ? (
+              <div className="mt-10 rounded-xl border border-dashed border-slate-200 py-12 text-center text-slate-400">
+                No channel data found for this selection.
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {channelSummary
+                  .slice()
+                  .sort((a, b) => b.total - a.total)
+                  .map((row) => {
+                    const barPct = Math.round((row.total / channelMax) * 100);
+                    const channelColor = CHANNEL_COLORS[row.channel] ?? CHANNEL_COLORS.Unknown ?? '#94a3b8';
+                    return (
+                      <div key={row.channel} className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[180px_1fr_170px] md:items-center">
+                          <div className="flex items-center justify-between md:block">
+                            <p className="text-sm font-semibold text-slate-900">{row.channel}</p>
+                            <p className="text-sm font-semibold text-slate-900 md:hidden">{row.total}</p>
+                          </div>
+                          <div className="h-2.5 rounded-full bg-slate-100">
+                            <div
+                              className="h-2.5 rounded-full"
+                              style={{ width: `${barPct}%`, backgroundColor: channelColor }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between md:justify-end md:text-right">
+                            <p className="hidden text-sm font-semibold text-slate-900 md:block">{row.total}</p>
+                            <div className="md:ml-4 flex flex-wrap items-center gap-2 justify-end">
+                              <span className="rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                                Win {row.winRate}%
+                              </span>
+                              <span className="rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                                Qualified {row.qualifiedRate}%
+                              </span>
+                              <span className="rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                                Active {row.activeRate}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                          <span>{row.won} won</span>
+                          <span className="text-slate-300">•</span>
+                          <span>{row.active} active</span>
+                          <span className="text-slate-300">•</span>
+                          <span>{row.inactive} inactive</span>
+                          <span className="text-slate-300">•</span>
+                          <span>Rev/deal {formatCompactAmount(row.revenuePerDeal)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {showLeadSourceTracker ? (
