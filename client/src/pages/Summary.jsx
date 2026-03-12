@@ -205,7 +205,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
   const showLeadSourceTracker = false;
   const [activeTab, setActiveTab] = useState('funnel'); // 'funnel' | 'channels'
   const [channelMode, setChannelMode] = useState('quarter'); // 'quarter' | 'all'
-  const [kpiMode, setKpiMode] = useState('quarter'); // 'quarter' | 'all'
+  const [kpiMode, setKpiMode] = useState('all'); // 'quarter' | 'all'
   const {
     filtered,
     quarterDeals,
@@ -271,20 +271,20 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
           </div>
           <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
             <button
-              onClick={() => setKpiMode('quarter')}
-              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                kpiMode === 'quarter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {quarterLabel}
-            </button>
-            <button
               onClick={() => setKpiMode('all')}
               className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
                 kpiMode === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               All Time
+            </button>
+            <button
+              onClick={() => setKpiMode('quarter')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                kpiMode === 'quarter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {quarterLabel}
             </button>
           </div>
         </div>
@@ -367,20 +367,20 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
               </div>
               <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
                 <button
-                  onClick={() => setChannelMode('quarter')}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                    channelMode === 'quarter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {quarterLabel}
-                </button>
-                <button
                   onClick={() => setChannelMode('all')}
                   className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
                     channelMode === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   All Time
+                </button>
+                <button
+                  onClick={() => setChannelMode('quarter')}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    channelMode === 'quarter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {quarterLabel}
                 </button>
               </div>
             </div>
