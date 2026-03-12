@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import GeoToggle from '../components/GeoToggle.jsx';
-import { buildChannelSummary, buildDashboardMetrics, CHANNEL_COLORS } from '../utils/dashboardMetrics.js';
+import { buildChannelSummary, buildDashboardMetrics, buildIndustrySummary, CHANNEL_COLORS } from '../utils/dashboardMetrics.js';
 import DemandGenWeeklyTargetTracker from '../components/DemandGenWeeklyTargetTracker.jsx';
 const PHASE_ROWS = [
   { key: 'Created', label: 'Deals Created', color: '#2563eb' },
@@ -203,8 +203,9 @@ function formatCompactAmount(value) {
 
 export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
   const showLeadSourceTracker = false;
-  const [activeTab, setActiveTab] = useState('funnel'); // 'funnel' | 'channels'
+  const [activeTab, setActiveTab] = useState('funnel'); // 'funnel' | 'channels' | 'industry'
   const [channelMode, setChannelMode] = useState('quarter'); // 'quarter' | 'all'
+  const [industryMode, setIndustryMode] = useState('all'); // 'quarter' | 'all'
   const [kpiMode, setKpiMode] = useState('all'); // 'quarter' | 'all'
   const {
     filtered,
@@ -232,6 +233,36 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
     return buildChannelSummary(dataset).filter((c) => c.total > 0);
   }, [channelMode, quarterDeals, filtered]);
   const channelMax = useMemo(() => Math.max(1, ...channelSummary.map((c) => c.total)), [channelSummary]);
+  const industrySummary = useMemo(() => {
+    const dataset = industryMode === 'quarter' ? quarterDeals : filtered;
+    const rows = buildIndustrySummary(dataset).filter((r) => r.total > 0);
+    const sorted = rows.slice().sort((a, b) => b.total - a.total);
+    const TOP_N = 8;
+    if (sorted.length <= TOP_N) return sorted;
+    const head = sorted.slice(0, TOP_N);
+    const tail = sorted.slice(TOP_N);
+    const other = tail.reduce(
+      (acc, row) => {
+        acc.total += row.total;
+        acc.active += row.active;
+        acc.inactive += row.inactive;
+        acc.won += row.won;
+        acc.SAL += row.SAL;
+        acc['SQL++'] += row['SQL++'];
+        acc.MQL += row.MQL;
+        return acc;
+      },
+      { industry: 'Other', total: 0, active: 0, inactive: 0, won: 0, SAL: 0, 'SQL++': 0, MQL: 0 }
+    );
+    const otherRates = {
+      activeRate: other.total ? Math.round((other.active / other.total) * 100) : 0,
+      inactiveRate: other.total ? Math.round((other.inactive / other.total) * 100) : 0,
+      winRate: other.total ? Math.round((other.won / other.total) * 100) : 0,
+      qualifiedRate: other.total ? Math.round(((other.SAL + other['SQL++']) / other.total) * 100) : 0,
+    };
+    return [...head, { ...other, ...otherRates }];
+  }, [industryMode, quarterDeals, filtered]);
+  const industryMax = useMemo(() => Math.max(1, ...industrySummary.map((r) => r.total)), [industrySummary]);
   const kpi = useMemo(() => {
     if (kpiMode === 'quarter') {
       return {
@@ -336,18 +367,19 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
             >
               Channel Split
             </button>
+            <button
+              onClick={() => setActiveTab('industry')}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                activeTab === 'industry' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Industry Split
+            </button>
           </div>
         </div>
 
         {activeTab === 'funnel' ? (
           <div className="mt-4 grid grid-cols-1 gap-5 xl:grid-cols-2">
-            <StageDistributionCard
-              title={quarterLabel}
-              subtitle="Stage distribution of quarter-created deals."
-              total={quarterDeals.length}
-              counts={quarterStageCounts}
-              scaleMax={stageScaleMax}
-            />
             <StageDistributionCard
               title="All Time"
               subtitle="Stage distribution across all created deals."
@@ -355,8 +387,15 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
               counts={allTimeStageCounts}
               scaleMax={stageScaleMax}
             />
+            <StageDistributionCard
+              title={quarterLabel}
+              subtitle="Stage distribution of quarter-created deals."
+              total={quarterDeals.length}
+              counts={quarterStageCounts}
+              scaleMax={stageScaleMax}
+            />
           </div>
-        ) : (
+        ) : activeTab === 'channels' ? (
           <div className="mt-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
@@ -443,6 +482,92 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
                         </div>
                       );
                     })}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Industry Split</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Top industries by volume for <span className="font-semibold text-slate-700">{geo}</span>.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                <button
+                  onClick={() => setIndustryMode('all')}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    industryMode === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  All Time
+                </button>
+                <button
+                  onClick={() => setIndustryMode('quarter')}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    industryMode === 'quarter' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {quarterLabel}
+                </button>
+              </div>
+            </div>
+
+            {industrySummary.length === 0 ? (
+              <div className="mt-10 rounded-xl border border-dashed border-slate-200 py-12 text-center text-slate-400">
+                No industry data found for this selection.
+              </div>
+            ) : (
+              <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <div className="hidden md:grid md:grid-cols-[220px_1fr_260px] md:gap-3 md:border-b md:border-slate-200 md:bg-slate-50 md:px-3 md:py-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Industry</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Volume</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 text-right">Rates</p>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {industrySummary.map((row) => {
+                    const barPct = Math.round((row.total / industryMax) * 100);
+                    return (
+                      <div key={row.industry} className="px-3 py-2 hover:bg-slate-50/60">
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-[220px_1fr_260px] md:items-center md:gap-3">
+                          <div className="flex items-center justify-between md:block">
+                            <p className="text-sm font-semibold text-slate-900 truncate" title={row.industry}>
+                              {row.industry}
+                            </p>
+                            <p className="text-sm font-semibold text-slate-900 md:hidden">{row.total}</p>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <div className="h-2 w-full rounded-full bg-slate-100">
+                              <div className="h-2 rounded-full bg-slate-700" style={{ width: `${barPct}%` }} />
+                            </div>
+                            <p className="hidden w-10 text-right text-sm font-semibold text-slate-900 md:block">{row.total}</p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-slate-600 md:justify-end">
+                            <span>
+                              <span className="font-semibold text-slate-900">{row.winRate}%</span> Win
+                            </span>
+                            <span className="text-slate-300 hidden md:inline">•</span>
+                            <span>
+                              <span className="font-semibold text-slate-900">{row.qualifiedRate}%</span> Qualified
+                            </span>
+                            <span className="text-slate-300 hidden md:inline">•</span>
+                            <span>
+                              <span className="font-semibold text-slate-900">{row.activeRate}%</span> Active
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-1 text-[11px] text-slate-500">
+                          {row.won} won <span className="text-slate-300">•</span> {row.active} active{' '}
+                          <span className="text-slate-300">•</span> {row.inactive} inactive
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

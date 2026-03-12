@@ -81,7 +81,15 @@ Keys must be lowercase. Values must be `'IN'` or `'US'`. Deals with unmapped val
 
 ---
 
-## 5. Run the App
+## 5. Customize the Industry Mapping (Optional)
+
+Edit `server/config/industryMapping.js`.
+
+Set `INDUSTRY_PROPERTY_NAME` to your HubSpot deal property internal name that stores industry (custom or standard). Unmapped/empty values show as `Unknown`.
+
+---
+
+## 6. Run the App
 
 **Install all dependencies:**
 ```bash

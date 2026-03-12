@@ -71,6 +71,12 @@ export const CHANNEL_COLORS = {
   Unknown: '#94a3b8',
 };
 
+function getIndustryKey(industry) {
+  if (!industry) return 'Unknown';
+  const trimmed = String(industry).trim();
+  return trimmed ? trimmed : 'Unknown';
+}
+
 function createStageSummary() {
   return {
     total: 0,
@@ -188,6 +194,50 @@ export function buildChannelSummary(deals) {
       qualifiedRate: percent(entry.SAL + entry['SQL++'], entry.total),
       sqlRate: percent(entry['SQL++'], entry.total),
       revenuePerDeal: entry.total > 0 ? Math.round(entry.amount / entry.total) : 0,
+    }));
+}
+
+export function buildIndustrySummary(deals) {
+  const map = new Map();
+
+  for (const deal of deals) {
+    const key = getIndustryKey(deal.industry);
+    const bucket = getSummaryBucket(deal);
+    const entry =
+      map.get(key) ??
+      {
+        industry: key,
+        total: 0,
+        active: 0,
+        inactive: 0,
+        won: 0,
+        'SQL++': 0,
+        SAL: 0,
+        MQL: 0,
+      };
+
+    entry.total += 1;
+
+    if (bucket === 'InActive') entry.inactive += 1;
+    else if (bucket === 'Deal Won') entry.won += 1;
+    else entry.active += 1;
+
+    if (bucket === 'MQL') entry.MQL += 1;
+    if (bucket === 'SAL') entry.SAL += 1;
+    if (bucket === 'SQL++') entry['SQL++'] += 1;
+
+    map.set(key, entry);
+  }
+
+  return Array.from(map.values())
+    .filter((entry) => entry.total > 0)
+    .map((entry) => ({
+      ...entry,
+      activeRate: percent(entry.active, entry.total),
+      inactiveRate: percent(entry.inactive, entry.total),
+      winRate: percent(entry.won, entry.total),
+      qualifiedRate: percent(entry.SAL + entry['SQL++'], entry.total),
+      sqlRate: percent(entry['SQL++'], entry.total),
     }));
 }
 

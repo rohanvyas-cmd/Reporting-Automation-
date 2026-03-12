@@ -2,6 +2,7 @@ import { Client } from '@hubspot/api-client';
 import { GEO_PROPERTY_NAME, resolveGeo } from '../config/geoMapping.js';
 import { resolveCategory, STAGE_IDS } from '../config/stageMapping.js';
 import { LEAD_SOURCE_PROPERTY, resolveLeadSource, resolveChannel } from '../config/leadSourceMapping.js';
+import { INDUSTRY_PROPERTY_NAME, resolveIndustry } from '../config/industryMapping.js';
 
 const DEAL_PROPERTIES = [
   'dealname',
@@ -14,6 +15,7 @@ const DEAL_PROPERTIES = [
   'hubspot_owner_id',
   GEO_PROPERTY_NAME,
   LEAD_SOURCE_PROPERTY,
+  INDUSTRY_PROPERTY_NAME,
 ];
 
 const STAGE_DATE_PROPERTIES = STAGE_IDS.flatMap((id) => [
@@ -111,6 +113,8 @@ export async function fetchAllDeals(accessToken, ownerMap = {}) {
       const geoRaw = props[GEO_PROPERTY_NAME] ?? null;
       const geo = resolveGeo(geoRaw);
       const category = resolveCategory(props.dealstage);
+      const industryRaw = props[INDUSTRY_PROPERTY_NAME] ?? null;
+      const industry = resolveIndustry(industryRaw);
       const stageHistory = STAGE_IDS.reduce((acc, id) => {
         const entered = props[`hs_date_entered_${id}`] ?? null;
         const exited = props[`hs_date_exited_${id}`] ?? null;
@@ -133,6 +137,8 @@ export async function fetchAllDeals(accessToken, ownerMap = {}) {
         ownerName: ownerMap[props.hubspot_owner_id] ?? props.hubspot_owner_id ?? '—',
         geoRaw,
         geography: geo,
+        industryRaw,
+        industry,
         category,
         leadSource: resolveLeadSource(props[LEAD_SOURCE_PROPERTY]),
         acquisitionChannel: resolveChannel(resolveLeadSource(props[LEAD_SOURCE_PROPERTY])),
