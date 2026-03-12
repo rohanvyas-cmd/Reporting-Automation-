@@ -82,6 +82,13 @@ const CAT_LABEL = {
   CLOSED_LOST: 'Deal Lost',
 };
 
+function getStageLabel(deal) {
+  const byId = deal?.dealstage ? STAGE_DISPLAY[deal.dealstage] : null;
+  if (byId) return byId;
+  if (deal?.category && CAT_LABEL[deal.category]) return CAT_LABEL[deal.category];
+  return deal?.category ?? '—';
+}
+
 function formatDate(val) {
   if (!val) return '—';
   return new Date(val).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -195,8 +202,8 @@ export default function DealDetails({ deals }) {
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      let av = a[sortKey];
-      let bv = b[sortKey];
+      let av = sortKey === 'category' ? getStageLabel(a) : a[sortKey];
+      let bv = sortKey === 'category' ? getStageLabel(b) : b[sortKey];
       if (av == null) return 1;
       if (bv == null) return -1;
       if (typeof av === 'string') av = av.toLowerCase();
@@ -378,7 +385,7 @@ export default function DealDetails({ deals }) {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${CAT_BADGE[deal.category] ?? 'bg-gray-100 text-gray-600'}`}>
-                      {CAT_LABEL[deal.category] ?? deal.category}
+                      {getStageLabel(deal)}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
