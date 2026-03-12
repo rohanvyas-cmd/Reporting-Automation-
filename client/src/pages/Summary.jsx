@@ -60,12 +60,24 @@ function buildDetailedStageCounts(deals) {
 }
 
 function buildPhaseSummary(total, counts) {
-  const lost = counts.Reject + counts.Dormant + counts['Semi-Dormant'] + counts.Revisit;
+  // HubSpot-style cumulative funnel:
+  // MQL++ = Initial Interest + SAL + SQL + Solutioning + Proposal + Contract
+  // SAL++ = SAL + SQL + Solutioning + Proposal + Contract
+  // SQL++ = SQL + Solutioning + Proposal + Contract
+  //
+  // Important: compute these directly from known stage counts (not as total - excluded),
+  // so deals from other pipelines/unmapped stages don't inflate the funnel.
   const won = counts['Deal Won'];
-  const excludedFromActive = counts['Deal Lost'] + lost + won;
-  const mqlPlus = Math.max(0, total - excludedFromActive);
-  const salPlus = Math.max(0, mqlPlus - counts['Initial Interest']);
-  const sqlPlus = Math.max(0, salPlus - counts.SAL);
+  const lost = counts['Deal Lost'] + counts.Reject + counts.Dormant + counts['Semi-Dormant'] + counts.Revisit;
+  const mqlPlus =
+    counts['Initial Interest'] +
+    counts.SAL +
+    counts.SQL +
+    counts.Solutioning +
+    counts.Proposal +
+    counts.Contract;
+  const salPlus = mqlPlus - counts['Initial Interest'];
+  const sqlPlus = salPlus - counts.SAL;
   return {
     Created: total,
     MQL_PLUS: mqlPlus,
@@ -102,6 +114,7 @@ function buildPhaseDetails(counts) {
     ],
     Won: [{ label: 'Deal Won', value: counts['Deal Won'] }],
     Lost: [
+      { label: 'Deal Lost', value: counts['Deal Lost'] },
       { label: 'Dormant', value: counts.Dormant },
       { label: 'Semi-Dormant', value: counts['Semi-Dormant'] },
       { label: 'Revisit', value: counts.Revisit },
