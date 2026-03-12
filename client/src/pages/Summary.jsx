@@ -362,10 +362,10 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
               </div>
             ) : (
               <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                <div className="hidden md:grid md:grid-cols-[140px_1fr_340px] md:gap-3 md:border-b md:border-slate-200 md:bg-slate-50 md:px-3 md:py-2">
+                <div className="hidden md:grid md:grid-cols-[140px_1fr_260px] md:gap-3 md:border-b md:border-slate-200 md:bg-slate-50 md:px-3 md:py-2">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Channel</p>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Volume</p>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 text-right">Rates & Value</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 text-right">Rates</p>
                 </div>
                 <div className="divide-y divide-slate-100">
                   {channelSummary
@@ -376,7 +376,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
                       const channelColor = CHANNEL_COLORS[row.channel] ?? CHANNEL_COLORS.Unknown ?? '#94a3b8';
                       return (
                         <div key={row.channel} className="px-3 py-2 hover:bg-slate-50/60">
-                          <div className="grid grid-cols-1 gap-2 md:grid-cols-[140px_1fr_340px] md:items-center md:gap-3">
+                          <div className="grid grid-cols-1 gap-2 md:grid-cols-[140px_1fr_260px] md:items-center md:gap-3">
                             <div className="flex items-center justify-between md:block">
                               <p className="text-sm font-semibold text-slate-900">{row.channel}</p>
                               <p className="text-sm font-semibold text-slate-900 md:hidden">{row.total}</p>
@@ -403,10 +403,6 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
                               <span className="text-slate-300 hidden md:inline">•</span>
                               <span>
                                 <span className="font-semibold text-slate-900">{row.activeRate}%</span> Active
-                              </span>
-                              <span className="text-slate-300 hidden md:inline">•</span>
-                              <span>
-                                <span className="font-semibold text-slate-900">{formatCompactAmount(row.revenuePerDeal)}</span> Rev/deal
                               </span>
                             </div>
                           </div>
