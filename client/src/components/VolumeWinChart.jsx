@@ -2,12 +2,11 @@ import {
   ResponsiveContainer,
   ComposedChart,
   Bar,
-  Line,
+  LabelList,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ReferenceLine,
   Cell,
 } from 'recharts';
 
@@ -57,14 +56,13 @@ function shortLabel(value, max = 14) {
 export default function VolumeWinChart({
   rows,
   height = 360,
-  winRateRef = null,
 }) {
   const maxVolume = Math.max(1, ...rows.map((r) => r.volume ?? 0));
 
   return (
     <div className="h-[360px] w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={rows} margin={{ top: 10, right: 20, bottom: 30, left: 12 }}>
+        <ComposedChart data={rows} margin={{ top: 26, right: 20, bottom: 30, left: 12 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis
             dataKey="name"
@@ -84,43 +82,24 @@ export default function VolumeWinChart({
             tickLine={{ stroke: '#e2e8f0' }}
             domain={[0, Math.ceil(maxVolume * 1.15)]}
           />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            tick={{ fill: '#64748b', fontSize: 12 }}
-            axisLine={{ stroke: '#e2e8f0' }}
-            tickLine={{ stroke: '#e2e8f0' }}
-            domain={[0, 100]}
-            tickFormatter={(v) => `${v}%`}
-          />
           <Tooltip cursor={{ fill: 'rgba(148, 163, 184, 0.12)' }} content={<TooltipContent />} />
-
-          {typeof winRateRef === 'number' && (
-            <ReferenceLine
-              yAxisId="right"
-              y={winRateRef}
-              stroke="#94a3b8"
-              strokeDasharray="4 4"
-            />
-          )}
 
           <Bar yAxisId="left" dataKey="volume" radius={[8, 8, 0, 0]} maxBarSize={56}>
             {rows.map((r) => (
               <Cell key={r.name} fill={r.color ?? '#2563eb'} fillOpacity={0.9} />
             ))}
+            <LabelList
+              dataKey="winRate"
+              position="top"
+              offset={10}
+              fill="#0f172a"
+              fontSize={12}
+              fontWeight={700}
+              formatter={(v) => `${v}%`}
+            />
           </Bar>
-          <Line
-            yAxisId="right"
-            type="monotone"
-            dataKey="winRate"
-            stroke="#0f172a"
-            strokeWidth={2}
-            dot={{ r: 4, stroke: '#0f172a', strokeWidth: 2, fill: '#fff' }}
-            activeDot={{ r: 5 }}
-          />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
 }
-

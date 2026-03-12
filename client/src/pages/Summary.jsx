@@ -281,13 +281,6 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
         color: CHANNEL_COLORS[row.channel] ?? CHANNEL_COLORS.Unknown ?? '#94a3b8',
       }));
   }, [channelSummary]);
-  const channelWinRef = useMemo(() => {
-    if (channelSummary.length === 0) return null;
-    const total = channelSummary.reduce((sum, r) => sum + (r.total ?? 0), 0);
-    const won = channelSummary.reduce((sum, r) => sum + (r.won ?? 0), 0);
-    return total ? Math.round((won / total) * 100) : 0;
-  }, [channelSummary]);
-
   const industryChartRows = useMemo(() => {
     return industrySummary
       .slice()
@@ -302,12 +295,6 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
         activeRate: row.activeRate ?? 0,
         color: row.industry === 'Long tail' ? '#94a3b8' : '#1d4ed8',
       }));
-  }, [industrySummary]);
-  const industryWinRef = useMemo(() => {
-    if (industrySummary.length === 0) return null;
-    const total = industrySummary.reduce((sum, r) => sum + (r.total ?? 0), 0);
-    const won = industrySummary.reduce((sum, r) => sum + (r.won ?? 0), 0);
-    return total ? Math.round((won / total) * 100) : 0;
   }, [industrySummary]);
   const kpi = useMemo(() => {
     if (kpiMode === 'quarter') {
@@ -478,7 +465,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
               <div className="mt-4">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-xs text-slate-500">
-                    Bars = <span className="font-semibold text-slate-700">volume</span>, line = <span className="font-semibold text-slate-700">win rate</span>.
+                    Bars = <span className="font-semibold text-slate-700">volume</span>, labels = <span className="font-semibold text-slate-700">win rate</span>.
                   </p>
                   <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
                     <button
@@ -502,7 +489,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
 
                 {channelView === 'chart' ? (
                   <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-                    <VolumeWinChart rows={channelChartRows} winRateRef={channelWinRef} />
+                    <VolumeWinChart rows={channelChartRows} />
                   </div>
                 ) : (
                   <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -601,7 +588,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
               <div className="mt-4">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-xs text-slate-500">
-                    Bars = <span className="font-semibold text-slate-700">volume</span>, line = <span className="font-semibold text-slate-700">win rate</span>.
+                    Bars = <span className="font-semibold text-slate-700">volume</span>, labels = <span className="font-semibold text-slate-700">win rate</span>.
                   </p>
                   <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
                     <button
@@ -625,7 +612,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
 
                 {industryView === 'chart' ? (
                   <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-                    <VolumeWinChart rows={industryChartRows} winRateRef={industryWinRef} />
+                    <VolumeWinChart rows={industryChartRows} />
                   </div>
                 ) : (
                   <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
