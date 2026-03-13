@@ -204,6 +204,7 @@ function formatCompactAmount(value) {
 
 export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
   const showLeadSourceTracker = false;
+  const showIndustryTab = false;
   const [activeTab, setActiveTab] = useState('funnel'); // 'funnel' | 'channels' | 'industry'
   const [channelMode, setChannelMode] = useState('quarter'); // 'quarter' | 'all'
   const [channelView, setChannelView] = useState('chart'); // 'list' | 'chart'
@@ -310,6 +311,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
       metrics: allTimeMetrics,
     };
   }, [kpiMode, quarterLabel, quarterSummary, quarterMetrics, allTimeSummary, allTimeMetrics]);
+  const effectiveTab = showIndustryTab ? activeTab : activeTab === 'industry' ? 'channels' : activeTab;
 
   return (
     <div className="space-y-8 pb-6">
@@ -387,7 +389,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
             <button
               onClick={() => setActiveTab('funnel')}
               className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                activeTab === 'funnel' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+                effectiveTab === 'funnel' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
               Funnel View
@@ -395,23 +397,25 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
             <button
               onClick={() => setActiveTab('channels')}
               className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                activeTab === 'channels' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+                effectiveTab === 'channels' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
               Channel Split
             </button>
-            <button
-              onClick={() => setActiveTab('industry')}
-              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
-                activeTab === 'industry' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              Industry Split
-            </button>
+            {showIndustryTab && (
+              <button
+                onClick={() => setActiveTab('industry')}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                  effectiveTab === 'industry' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Industry Split
+              </button>
+            )}
           </div>
         </div>
 
-        {activeTab === 'funnel' ? (
+        {effectiveTab === 'funnel' ? (
           <div className="mt-4 grid grid-cols-1 gap-5 xl:grid-cols-2">
             <StageDistributionCard
               title="All Time"
@@ -428,7 +432,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
               scaleMax={stageScaleMax}
             />
           </div>
-        ) : activeTab === 'channels' ? (
+        ) : effectiveTab === 'channels' ? (
           <div className="mt-4 rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
