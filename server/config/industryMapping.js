@@ -12,6 +12,16 @@
 // TODO: Verify this internal property name in HubSpot Settings > Properties
 export const INDUSTRY_PROPERTY_NAME = 'industry';
 
+// Optional env override: comma-separated list of property names to try in order.
+export function getIndustryPropertyNames() {
+  const fromEnv = process.env.HUBSPOT_INDUSTRY_PROPERTIES;
+  if (!fromEnv) return [INDUSTRY_PROPERTY_NAME];
+  return fromEnv
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 export const INDUSTRY_VALUE_MAP = {};
 
 /**
@@ -25,4 +35,3 @@ export function resolveIndustry(rawValue) {
   const key = trimmed.toLowerCase();
   return INDUSTRY_VALUE_MAP[key] ?? trimmed;
 }
-

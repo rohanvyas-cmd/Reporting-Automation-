@@ -2,7 +2,7 @@ import { Client } from '@hubspot/api-client';
 import { GEO_PROPERTY_NAME, resolveGeo } from '../config/geoMapping.js';
 import { resolveCategory, STAGE_IDS } from '../config/stageMapping.js';
 import { LEAD_SOURCE_PROPERTY, resolveLeadSource, resolveChannel } from '../config/leadSourceMapping.js';
-import { INDUSTRY_PROPERTY_NAME, resolveIndustry } from '../config/industryMapping.js';
+import { getIndustryPropertyNames, resolveIndustry } from '../config/industryMapping.js';
 
 const DEAL_PROPERTIES = [
   'dealname',
@@ -15,8 +15,10 @@ const DEAL_PROPERTIES = [
   'hubspot_owner_id',
   GEO_PROPERTY_NAME,
   LEAD_SOURCE_PROPERTY,
-  INDUSTRY_PROPERTY_NAME,
 ];
+
+const INDUSTRY_PROPERTIES = getIndustryPropertyNames();
+DEAL_PROPERTIES.push(...INDUSTRY_PROPERTIES);
 
 const STAGE_DATE_PROPERTIES = STAGE_IDS.flatMap((id) => [
   `hs_date_entered_${id}`,
@@ -113,7 +115,9 @@ export async function fetchAllDeals(accessToken, ownerMap = {}) {
       const geoRaw = props[GEO_PROPERTY_NAME] ?? null;
       const geo = resolveGeo(geoRaw);
       const category = resolveCategory(props.dealstage);
-      const industryRaw = props[INDUSTRY_PROPERTY_NAME] ?? null;
+      const industryRaw =
+        INDUSTRY_PROPERTIES.map((key) => props[key])
+          .find((val) => val != null && String(val).trim() !== '') ?? null;
       const industry = resolveIndustry(industryRaw);
       const stageHistory = STAGE_IDS.reduce((acc, id) => {
         const entered = props[`hs_date_entered_${id}`] ?? null;

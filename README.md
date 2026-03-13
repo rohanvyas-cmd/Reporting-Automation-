@@ -86,6 +86,11 @@ Keys must be lowercase. Values must be `'IN'` or `'US'`. Deals with unmapped val
 Edit `server/config/industryMapping.js`.
 
 Set `INDUSTRY_PROPERTY_NAME` to your HubSpot deal property internal name that stores industry (custom or standard). Unmapped/empty values show as `Unknown`.
+You can also override via `.env` with a comma-separated list:
+
+```
+HUBSPOT_INDUSTRY_PROPERTIES=industry,industry__c,custom_industry
+```
 
 ---
 
