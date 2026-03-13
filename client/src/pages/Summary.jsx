@@ -311,6 +311,10 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
       metrics: allTimeMetrics,
     };
   }, [kpiMode, quarterLabel, quarterSummary, quarterMetrics, allTimeSummary, allTimeMetrics]);
+  const winRateExact = kpi.summary.total
+    ? (kpi.summary['Deal Won'] / kpi.summary.total) * 100
+    : 0;
+  const winRateDisplay = winRateExact.toFixed(2);
   const effectiveTab = showIndustryTab ? activeTab : activeTab === 'industry' ? 'channels' : activeTab;
 
   return (
@@ -368,7 +372,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
           />
           <ExecutiveStatCard
             label="Win Rate"
-            value={`${kpi.metrics.winRate}%`}
+            value={`${winRateDisplay}%`}
             context={`${kpi.summary['Deal Won']} / ${kpi.summary.total} won • ${kpi.label}`}
           />
         </div>
