@@ -153,12 +153,19 @@ export default function DealDetails({ deals }) {
     }
   }, [deals, mode, qStart, qEnd]);
 
+  const SQL_PP_STAGE_IDS = ['249283938', '244798994', '244798992']; // Solutioning, Proposal, Contract
+
   // Progressed stage breakdown (for the stats bar in progressed mode)
   const progressedByStage = useMemo(() => {
     if (mode !== 'progressed') return null;
-    const counts = { SAL: 0, SQL: 0, Active: 0, CLOSED_WON: 0, CLOSED_LOST: 0 };
+    const counts = { SAL: 0, SQL: 0, SQL_PP: 0, CLOSED_WON: 0, CLOSED_LOST: 0 };
     for (const d of baseDeals) {
-      if (counts[d.category] !== undefined) counts[d.category]++;
+      const stageId = d.dealstage ?? '';
+      if (stageId === '1047744293') counts.SAL += 1; // SAL
+      else if (stageId === '244798990') counts.SQL += 1; // SQL
+      else if (SQL_PP_STAGE_IDS.includes(stageId)) counts.SQL_PP += 1; // Solutioning/Proposal/Contract
+      else if (stageId === '244798995') counts.CLOSED_WON += 1; // Won
+      else if (stageId === '244798996' || stageId === '1047744292') counts.CLOSED_LOST += 1; // Lost/Reject
     }
     return counts;
   }, [mode, baseDeals]);
@@ -266,7 +273,7 @@ export default function DealDetails({ deals }) {
           {[
             { label: 'Now at SAL', count: progressedByStage.SAL, color: 'bg-purple-100 text-purple-700' },
             { label: 'Now at SQL', count: progressedByStage.SQL, color: 'bg-orange-100 text-orange-700' },
-            { label: 'Advanced (Post-SQL)', count: progressedByStage.Active, color: 'bg-blue-100 text-blue-700' },
+            { label: 'SQL++', count: progressedByStage.SQL_PP, color: 'bg-blue-100 text-blue-700' },
             { label: 'Won', count: progressedByStage.CLOSED_WON, color: 'bg-green-100 text-green-700' },
             { label: 'Lost', count: progressedByStage.CLOSED_LOST, color: 'bg-red-100 text-red-500' },
           ].map(({ label, count, color }) => (
