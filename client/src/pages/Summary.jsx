@@ -321,7 +321,7 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
     <div className="space-y-8 pb-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Summary Dashboard</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">Pipeline Summary</h2>
           <p className="mt-1 text-sm text-gray-500">
             Created-deal flow for {quarterLabel}, compared with the full history of created deals.
           </p>

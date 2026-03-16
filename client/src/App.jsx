@@ -10,11 +10,11 @@ import { useAuth } from './hooks/useAuth.js';
 import logoImage from './assets/image.png';
 import { useState } from 'react';
 
-const TABS = ['Summary', 'Deals'];
+const TABS = ['Pipeline Summary', 'Deals'];
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
 
 function Dashboard() {
-  const [activeTab, setActiveTab] = useState('Summary');
+  const [activeTab, setActiveTab] = useState('Pipeline Summary');
   const [geo, setGeo] = useState('All');
   const { deals, loading, error, fetchedAt, fetchDeals } = useDeals();
   const { user, signOut } = useAuth();
@@ -117,7 +117,7 @@ function Dashboard() {
           </div>
         ) : (
           <>
-            {activeTab === 'Summary' && (
+            {activeTab === 'Pipeline Summary' && (
               <Summary deals={deals} geo={geo} onGeoChange={setGeo} fetchedAt={fetchedAt} />
             )}
             {activeTab === 'Deals' && (
