@@ -32,6 +32,11 @@ const STATUS_STYLES = {
     progress: 'bg-rose-500',
   },
 };
+const STATUS_CELL_BG = {
+  Green: 'bg-emerald-50/80',
+  Amber: 'bg-amber-50/80',
+  Red: 'bg-rose-50/80',
+};
 
 const MOMENTUM_MAP = {
   Up: { icon: '▲', className: 'text-emerald-700' },
@@ -376,6 +381,9 @@ export default function DemandGenWeeklyTargetTracker({
   quarterStart,
   quarterEnd,
   fetchedAt,
+  title,
+  subtitle,
+  compact = false,
 }) {
   const hasTracker = Boolean(DEMAND_GEN_TARGETS[geo]);
   const tracker = useMemo(
@@ -390,31 +398,35 @@ export default function DemandGenWeeklyTargetTracker({
     return (
       <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-          Demand Gen Weekly Target Tracker
+          Demand Gen Tracker
         </p>
-        <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+        <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">
           No tracker configured for {geo}
         </h3>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          This tracker is currently available only for US and India, because those are the geographies with configured quarterly targets.
-        </p>
       </section>
     );
   }
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-            Lead Source Stage Tracker
+            {title ?? 'Demand Gen Tracker'}
           </p>
-          <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
-            Goals, current volume, and weekly deltas by source
-          </h3>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Current-quarter pacing for {quarterLabel}. Columns show goal, current count, and week-over-week delta for MQL, SAL, and SQL. Excludes Partnership.
-          </p>
+          {!compact && (
+            <>
+              <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+                Goals, current volume, and weekly deltas by source
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Current-quarter pacing for {quarterLabel}. Columns show goal, current count, and week-over-week delta for MQL, SAL, and SQL. Excludes Partnership.
+              </p>
+            </>
+          )}
+          {compact && subtitle ? (
+            <p className="mt-2 text-sm leading-6 text-slate-600">{subtitle}</p>
+          ) : null}
         </div>
         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">As of</p>
@@ -454,7 +466,9 @@ export default function DemandGenWeeklyTargetTracker({
                 {row.cells.map((cell) => (
                   <Fragment key={`${row.key}-${cell.stage}`}>
                     <td className="px-4 py-3 text-slate-600">{cell.goal}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">{cell.current}</td>
+                    <td className={`px-4 py-3 font-semibold text-slate-900 ${STATUS_CELL_BG[cell.status] ?? ''}`}>
+                      {cell.current}
+                    </td>
                     <td className={`px-4 py-3 font-semibold ${cell.weekly_delta >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                       {formatSigned(cell.weekly_delta)}
                     </td>
