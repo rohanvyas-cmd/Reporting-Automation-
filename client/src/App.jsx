@@ -11,7 +11,7 @@ import { useAuth } from './hooks/useAuth.js';
 import logoImage from './assets/image.png';
 import { useState } from 'react';
 
-const TABS = ['Pipeline Summary', 'Deals', 'Demand Gen Tracker'];
+const TABS = ['Demand Gen Tracker', 'Pipeline Summary', 'Deals'];
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
 
 function Dashboard() {
@@ -40,7 +40,7 @@ function Dashboard() {
               </div>
             </div>
 
-            <nav className="flex flex-wrap justify-start gap-2 rounded-lg border border-blue-100 bg-blue-50 p-1 md:justify-center md:place-self-center">
+            <nav className="flex flex-nowrap justify-start gap-2 rounded-lg border border-blue-100 bg-blue-50 p-1 md:justify-center md:place-self-center overflow-x-auto whitespace-nowrap">
               {TABS.map((tab) => (
                 <button
                   key={tab}

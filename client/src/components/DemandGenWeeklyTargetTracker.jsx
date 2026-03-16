@@ -51,22 +51,6 @@ const STAGE_ID_MAP = {
   SQL: '244798990',
 };
 
-function weekStart(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function weekEnd(date) {
-  const end = new Date(weekStart(date));
-  end.setDate(end.getDate() + 6);
-  end.setHours(23, 59, 59, 999);
-  return end;
-}
-
 function getWeeksRemaining(quarterEnd, now = new Date()) {
   if (now >= quarterEnd) return 0;
   return Math.max(0, Math.ceil((quarterEnd.getTime() - now.getTime()) / MS_PER_WEEK));
@@ -121,35 +105,42 @@ function getMomentum(delta) {
   return 'Flat';
 }
 
-// Count a deal once it has reached a stage (even if it later moved out).
-function dealReachedStageBy(deal, stageId, asOfEnd) {
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getStageEnteredAt(deal, stageId) {
   const stageHistory = deal.stageHistory ?? {};
   const entry = stageHistory?.[stageId]?.entered ?? null;
   if (entry) {
     const enteredAt = new Date(entry);
-    if (Number.isNaN(enteredAt.getTime()) || enteredAt > asOfEnd) return false;
-    return true;
+    if (!Number.isNaN(enteredAt.getTime())) return enteredAt;
   }
 
-  if (deal.dealstage !== stageId) return false;
-  if (!deal.createdate) return true;
-  const created = new Date(deal.createdate);
-  if (Number.isNaN(created.getTime())) return true;
-  return created <= asOfEnd;
+  if (stageId === STAGE_ID_MAP.MQL && deal.createdate) {
+    const created = new Date(deal.createdate);
+    if (!Number.isNaN(created.getTime())) return created;
+  }
+
+  return null;
 }
 
-function buildNormalizedCells({ deals, targets, asOfEnd, priorAsOfEnd }) {
+function buildNormalizedCells({ deals, targets, asOfEnd, priorAsOfEnd, quarterStart }) {
+  const weekStart = startOfDay(priorAsOfEnd);
 
   return SOURCE_ROWS.flatMap((source) =>
     STAGE_COLUMNS.map((stage) => {
       const goal = targets?.[source.key]?.[stage.key] ?? 0;
       const stageId = STAGE_ID_MAP[stage.key];
       const sourceDeals = deals.filter((deal) => deal.acquisitionChannel === source.key);
-      const currentDeals = sourceDeals.filter((deal) => dealReachedStageBy(deal, stageId, asOfEnd));
-      const priorDeals = sourceDeals.filter((deal) => dealReachedStageBy(deal, stageId, priorAsOfEnd));
-      const current = currentDeals.length;
-      const priorWeekValue = priorDeals.length;
-      const weeklyDelta = current - priorWeekValue;
+      const stageEntries = sourceDeals
+        .map((deal) => ({ deal, enteredAt: getStageEnteredAt(deal, stageId) }))
+        .filter(({ enteredAt }) => enteredAt && enteredAt >= quarterStart && enteredAt <= asOfEnd);
+      const weeklyEntries = stageEntries.filter(({ enteredAt }) => enteredAt >= weekStart);
+      const current = stageEntries.length;
+      const weeklyDelta = weeklyEntries.length;
 
       return {
         source: source.label,
@@ -158,7 +149,7 @@ function buildNormalizedCells({ deals, targets, asOfEnd, priorAsOfEnd }) {
         goal,
         current,
         weekly_delta: weeklyDelta,
-        matchedDeals: currentDeals,
+        matchedDeals: stageEntries.map(({ deal }) => deal),
       };
     })
   );
@@ -263,7 +254,7 @@ function buildTrackerData({ deals, geo, quarterStart, quarterEnd, fetchedAt, asO
   const weeksRemaining = getWeeksRemaining(quarterEnd, today);
   const targets = getTargetSet(geo);
 
-  const normalizedCells = buildNormalizedCells({ deals, targets, asOfEnd, priorAsOfEnd });
+  const normalizedCells = buildNormalizedCells({ deals, targets, asOfEnd, priorAsOfEnd, quarterStart });
   const derivedCells = normalizedCells.map((cell) => deriveCellMetrics(cell, weeksRemaining));
   const rows = buildSourceSummaries(derivedCells);
   const stageTotals = buildStageTotals(derivedCells);
@@ -421,7 +412,7 @@ export default function DemandGenWeeklyTargetTracker({
                 Goals, current volume, and weekly deltas by source
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Current-quarter pacing for {quarterLabel}. “Current” is the total deals that have reached the stage by the as‑of date, regardless of their current stage.
+                Current-quarter pacing for {quarterLabel}. “Current” counts deals that entered the stage this quarter, even if they moved ahead. “Δ Week” counts stage entries in the selected week.
               </p>
             </>
           )}

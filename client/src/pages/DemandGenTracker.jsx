@@ -21,7 +21,7 @@ export default function DemandGenTracker({ deals, fetchedAt }) {
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">Demand Gen Tracker</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Weekly pacing vs goals for US and India.
+            Weekly pacing vs goals for US and India. Current = stage entries in-quarter; Δ Week = entries in the selected week.
           </p>
         </div>
       </div>
@@ -36,7 +36,7 @@ export default function DemandGenTracker({ deals, fetchedAt }) {
               Week-over-week pacing for US and India
             </h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Shows goals vs current counts with weekly deltas for SQL, SAL, and MQL. Updates automatically each week.
+              Shows goals vs current counts for SQL, SAL, and MQL. Current counts stage entries this quarter; Δ Week counts entries during the selected week.
             </p>
           </div>
         </div>
@@ -50,7 +50,7 @@ export default function DemandGenTracker({ deals, fetchedAt }) {
             quarterEnd={qEnd}
             fetchedAt={fetchedAt}
             title="US"
-            subtitle={`Verification window: Mar 2–9, 2026 (${quarterLabel}).`}
+            subtitle={`Verification window: Mar 2–9, 2026 (${quarterLabel}). Current = stage entries since quarter start; Δ Week = entries in that week.`}
             compact
             asOfOverride={demandGenAsOf}
             priorAsOfOverride={demandGenPriorAsOf}
@@ -63,7 +63,7 @@ export default function DemandGenTracker({ deals, fetchedAt }) {
             quarterEnd={qEnd}
             fetchedAt={fetchedAt}
             title="India"
-            subtitle={`Verification window: Mar 2–9, 2026 (${quarterLabel}).`}
+            subtitle={`Verification window: Mar 2–9, 2026 (${quarterLabel}). Current = stage entries since quarter start; Δ Week = entries in that week.`}
             compact
             asOfOverride={demandGenAsOf}
             priorAsOfOverride={demandGenPriorAsOf}
@@ -73,4 +73,3 @@ export default function DemandGenTracker({ deals, fetchedAt }) {
     </div>
   );
 }
-
