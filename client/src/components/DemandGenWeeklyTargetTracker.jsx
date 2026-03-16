@@ -111,20 +111,26 @@ function startOfDay(date) {
   return d;
 }
 
-function getStageEnteredAt(deal, stageId) {
+function getStageEnteredDates(deal, stageId) {
   const stageHistory = deal.stageHistory ?? {};
   const entry = stageHistory?.[stageId]?.entered ?? null;
-  if (entry) {
-    const enteredAt = new Date(entry);
-    if (!Number.isNaN(enteredAt.getTime())) return enteredAt;
+  const dates = [];
+  const pushDate = (value) => {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) dates.push(date);
+  };
+
+  if (Array.isArray(entry)) {
+    entry.forEach(pushDate);
+  } else if (entry) {
+    pushDate(entry);
   }
 
   if (stageId === STAGE_ID_MAP.MQL && deal.createdate) {
-    const created = new Date(deal.createdate);
-    if (!Number.isNaN(created.getTime())) return created;
+    pushDate(deal.createdate);
   }
 
-  return null;
+  return dates;
 }
 
 function buildNormalizedCells({ deals, targets, asOfEnd, quarterStart }) {
@@ -137,9 +143,11 @@ function buildNormalizedCells({ deals, targets, asOfEnd, quarterStart }) {
       const stageId = STAGE_ID_MAP[stage.key];
       const sourceDeals = deals.filter((deal) => deal.acquisitionChannel === source.key);
       const stageEntries = sourceDeals
-        .map((deal) => ({ deal, enteredAt: getStageEnteredAt(deal, stageId) }))
-        .filter(({ enteredAt }) => enteredAt && enteredAt >= quarterStart && enteredAt <= asOfEnd);
-      const weeklyEntries = stageEntries.filter(({ enteredAt }) => enteredAt >= weekStart && enteredAt <= asOfEnd);
+        .map((deal) => ({ deal, enteredAtList: getStageEnteredDates(deal, stageId) }))
+        .filter(({ enteredAtList }) => enteredAtList.some((date) => date >= quarterStart && date <= asOfEnd));
+      const weeklyEntries = stageEntries.filter(({ enteredAtList }) =>
+        enteredAtList.some((date) => date >= weekStart && date <= asOfEnd)
+      );
       const current = stageEntries.length;
       const weeklyDelta = weeklyEntries.length;
 

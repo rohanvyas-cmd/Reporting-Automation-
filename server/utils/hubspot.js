@@ -1,6 +1,6 @@
 import { Client } from '@hubspot/api-client';
 import { GEO_PROPERTY_NAME, resolveGeo } from '../config/geoMapping.js';
-import { resolveCategory, STAGE_IDS } from '../config/stageMapping.js';
+import { resolveCategory } from '../config/stageMapping.js';
 import { LEAD_SOURCE_PROPERTY, resolveLeadSource, resolveChannel } from '../config/leadSourceMapping.js';
 import { getIndustryPropertyNames, resolveIndustry } from '../config/industryMapping.js';
 
@@ -20,15 +20,11 @@ const DEAL_PROPERTIES = [
 const INDUSTRY_PROPERTIES = getIndustryPropertyNames();
 DEAL_PROPERTIES.push(...INDUSTRY_PROPERTIES);
 
-const STAGE_DATE_PROPERTIES = STAGE_IDS.flatMap((id) => [
-  `hs_date_entered_${id}`,
-  `hs_date_exited_${id}`,
-]);
-
 // Deduplicate in case GEO_PROPERTY_NAME overlaps with defaults
-const PROPERTIES = [...new Set([...DEAL_PROPERTIES, ...STAGE_DATE_PROPERTIES])];
+const PROPERTIES = [...new Set([...DEAL_PROPERTIES])];
+const PROPERTIES_WITH_HISTORY = ['dealstage'];
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 50;
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
@@ -65,7 +61,7 @@ async function fetchPageWithRetry(client, after, retries = 0) {
       PAGE_SIZE,
       after,
       PROPERTIES,
-      undefined,
+      PROPERTIES_WITH_HISTORY,
       undefined,
       false
     );
@@ -142,12 +138,12 @@ export async function fetchAllDeals(accessToken, ownerMap = {}) {
         INDUSTRY_PROPERTIES.map((key) => props[key])
           .find((val) => val != null && String(val).trim() !== '') ?? null;
       const industry = resolveIndustry(industryRaw);
-      const stageHistory = STAGE_IDS.reduce((acc, id) => {
-        const entered = parseHubspotDate(props[`hs_date_entered_${id}`]);
-        const exited = parseHubspotDate(props[`hs_date_exited_${id}`]);
-        if (entered || exited) {
-          acc[id] = { entered, exited };
-        }
+      const stageHistory = (deal.propertiesWithHistory?.dealstage ?? []).reduce((acc, entry) => {
+        const stageId = entry?.value;
+        const enteredAt = parseHubspotDate(entry?.timestamp);
+        if (!stageId || !enteredAt) return acc;
+        if (!acc[stageId]) acc[stageId] = { entered: [] };
+        acc[stageId].entered.push(enteredAt);
         return acc;
       }, {});
 
