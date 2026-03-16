@@ -259,11 +259,10 @@ function buildValidationObject(cells) {
   };
 }
 
-function buildTrackerData({ deals, geo, quarterStart, quarterEnd, fetchedAt }) {
+function buildTrackerData({ deals, geo, quarterStart, quarterEnd, fetchedAt, asOfOverride, priorAsOfOverride }) {
   const today = new Date();
-  const asOfEnd = endOfDay(today);
-  const priorAsOfEnd = new Date(asOfEnd);
-  priorAsOfEnd.setDate(priorAsOfEnd.getDate() - 7);
+  const asOfEnd = endOfDay(asOfOverride ?? today);
+  const priorAsOfEnd = endOfDay(priorAsOfOverride ?? new Date(asOfEnd.getTime() - MS_PER_WEEK));
   const weeksRemaining = getWeeksRemaining(quarterEnd, today);
   const targets = getTargetSet(geo);
 
@@ -384,11 +383,16 @@ export default function DemandGenWeeklyTargetTracker({
   title,
   subtitle,
   compact = false,
+  asOfOverride,
+  priorAsOfOverride,
 }) {
   const hasTracker = Boolean(DEMAND_GEN_TARGETS[geo]);
   const tracker = useMemo(
-    () => (hasTracker ? buildTrackerData({ deals, geo, quarterStart, quarterEnd, fetchedAt }) : null),
-    [deals, geo, hasTracker, quarterStart, quarterEnd, fetchedAt]
+    () =>
+      hasTracker
+        ? buildTrackerData({ deals, geo, quarterStart, quarterEnd, fetchedAt, asOfOverride, priorAsOfOverride })
+        : null,
+    [deals, geo, hasTracker, quarterStart, quarterEnd, fetchedAt, asOfOverride, priorAsOfOverride]
   );
   if (import.meta.env.DEV && tracker) {
     window.__DEMAND_GEN_VALIDATION__ = tracker.validation;

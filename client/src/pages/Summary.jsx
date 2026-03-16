@@ -234,6 +234,8 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
     }),
     [deals]
   );
+  const demandGenAsOf = useMemo(() => new Date('2026-03-09T12:00:00'), []);
+  const demandGenPriorAsOf = useMemo(() => new Date('2026-03-02T12:00:00'), []);
 
   const quarterStageCounts = useMemo(() => buildDetailedStageCounts(quarterDeals), [quarterDeals]);
   const allTimeStageCounts = useMemo(() => buildDetailedStageCounts(filtered), [filtered]);
@@ -710,8 +712,10 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
             quarterEnd={qEnd}
             fetchedAt={fetchedAt}
             title="US"
-            subtitle={`Current-quarter targets (${quarterLabel}).`}
+            subtitle={`Verification window: Mar 2–9, 2026 (${quarterLabel}).`}
             compact
+            asOfOverride={demandGenAsOf}
+            priorAsOfOverride={demandGenPriorAsOf}
           />
           <DemandGenWeeklyTargetTracker
             deals={demandGenDealsByGeo.India}
@@ -721,8 +725,10 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
             quarterEnd={qEnd}
             fetchedAt={fetchedAt}
             title="India"
-            subtitle={`Current-quarter targets (${quarterLabel}).`}
+            subtitle={`Verification window: Mar 2–9, 2026 (${quarterLabel}).`}
             compact
+            asOfOverride={demandGenAsOf}
+            priorAsOfOverride={demandGenPriorAsOf}
           />
         </div>
       </section>
