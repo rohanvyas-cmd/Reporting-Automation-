@@ -12,8 +12,17 @@ export default function DemandGenTracker({ deals, fetchedAt }) {
     }),
     [deals]
   );
-  const demandGenAsOf = useMemo(() => new Date('2026-03-09T12:00:00'), []);
-  const demandGenPriorAsOf = useMemo(() => new Date('2026-03-02T12:00:00'), []);
+  const { demandGenAsOf, demandGenWeekStartLabel, demandGenWeekEndLabel } = useMemo(() => {
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(end.getDate() - 6);
+    start.setHours(0, 0, 0, 0);
+    return {
+      demandGenAsOf: end,
+      demandGenWeekStartLabel: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      demandGenWeekEndLabel: end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    };
+  }, []);
 
   return (
     <div className="space-y-8 pb-6">
@@ -50,10 +59,9 @@ export default function DemandGenTracker({ deals, fetchedAt }) {
             quarterEnd={qEnd}
             fetchedAt={fetchedAt}
             title="US"
-            subtitle={`Verification window: Mar 2–9, 2026 (${quarterLabel}). Current = stage entries since quarter start; Δ Week = entries in that week.`}
+            subtitle={`Verification window: ${demandGenWeekStartLabel}–${demandGenWeekEndLabel} (${quarterLabel}). Current = stage entries since quarter start; Δ Week = entries in that week.`}
             compact
             asOfOverride={demandGenAsOf}
-            priorAsOfOverride={demandGenPriorAsOf}
           />
           <DemandGenWeeklyTargetTracker
             deals={demandGenDealsByGeo.India}
@@ -63,10 +71,9 @@ export default function DemandGenTracker({ deals, fetchedAt }) {
             quarterEnd={qEnd}
             fetchedAt={fetchedAt}
             title="India"
-            subtitle={`Verification window: Mar 2–9, 2026 (${quarterLabel}). Current = stage entries since quarter start; Δ Week = entries in that week.`}
+            subtitle={`Verification window: ${demandGenWeekStartLabel}–${demandGenWeekEndLabel} (${quarterLabel}). Current = stage entries since quarter start; Δ Week = entries in that week.`}
             compact
             asOfOverride={demandGenAsOf}
-            priorAsOfOverride={demandGenPriorAsOf}
           />
         </div>
       </section>

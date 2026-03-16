@@ -127,8 +127,9 @@ function getStageEnteredAt(deal, stageId) {
   return null;
 }
 
-function buildNormalizedCells({ deals, targets, asOfEnd, priorAsOfEnd, quarterStart }) {
-  const weekStart = startOfDay(priorAsOfEnd);
+function buildNormalizedCells({ deals, targets, asOfEnd, quarterStart }) {
+  const weekStart = startOfDay(new Date(asOfEnd));
+  weekStart.setDate(weekStart.getDate() - 6);
 
   return SOURCE_ROWS.flatMap((source) =>
     STAGE_COLUMNS.map((stage) => {
@@ -138,7 +139,7 @@ function buildNormalizedCells({ deals, targets, asOfEnd, priorAsOfEnd, quarterSt
       const stageEntries = sourceDeals
         .map((deal) => ({ deal, enteredAt: getStageEnteredAt(deal, stageId) }))
         .filter(({ enteredAt }) => enteredAt && enteredAt >= quarterStart && enteredAt <= asOfEnd);
-      const weeklyEntries = stageEntries.filter(({ enteredAt }) => enteredAt >= weekStart);
+      const weeklyEntries = stageEntries.filter(({ enteredAt }) => enteredAt >= weekStart && enteredAt <= asOfEnd);
       const current = stageEntries.length;
       const weeklyDelta = weeklyEntries.length;
 
@@ -247,14 +248,13 @@ function buildValidationObject(cells) {
   };
 }
 
-function buildTrackerData({ deals, geo, quarterStart, quarterEnd, fetchedAt, asOfOverride, priorAsOfOverride }) {
+function buildTrackerData({ deals, geo, quarterStart, quarterEnd, fetchedAt, asOfOverride }) {
   const today = new Date();
   const asOfEnd = endOfDay(asOfOverride ?? today);
-  const priorAsOfEnd = endOfDay(priorAsOfOverride ?? new Date(asOfEnd.getTime() - MS_PER_WEEK));
   const weeksRemaining = getWeeksRemaining(quarterEnd, today);
   const targets = getTargetSet(geo);
 
-  const normalizedCells = buildNormalizedCells({ deals, targets, asOfEnd, priorAsOfEnd, quarterStart });
+  const normalizedCells = buildNormalizedCells({ deals, targets, asOfEnd, quarterStart });
   const derivedCells = normalizedCells.map((cell) => deriveCellMetrics(cell, weeksRemaining));
   const rows = buildSourceSummaries(derivedCells);
   const stageTotals = buildStageTotals(derivedCells);
@@ -372,15 +372,14 @@ export default function DemandGenWeeklyTargetTracker({
   subtitle,
   compact = false,
   asOfOverride,
-  priorAsOfOverride,
 }) {
   const hasTracker = Boolean(DEMAND_GEN_TARGETS[geo]);
   const tracker = useMemo(
     () =>
       hasTracker
-        ? buildTrackerData({ deals, geo, quarterStart, quarterEnd, fetchedAt, asOfOverride, priorAsOfOverride })
+        ? buildTrackerData({ deals, geo, quarterStart, quarterEnd, fetchedAt, asOfOverride })
         : null,
-    [deals, geo, hasTracker, quarterStart, quarterEnd, fetchedAt, asOfOverride, priorAsOfOverride]
+    [deals, geo, hasTracker, quarterStart, quarterEnd, fetchedAt, asOfOverride]
   );
   if (import.meta.env.DEV && tracker) {
     window.__DEMAND_GEN_VALIDATION__ = tracker.validation;
