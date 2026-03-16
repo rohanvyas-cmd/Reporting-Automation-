@@ -413,6 +413,9 @@ export default function DemandGenWeeklyTargetTracker({
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 Current-quarter pacing for {quarterLabel}. “Current” counts deals that entered the stage this quarter, even if they moved ahead. “Δ Week” counts stage entries in the selected week.
               </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                How to read: pick a lead source row, then scan across SQL → SAL → MQL. Each stage shows Goal, Current, and Δ Week.
+              </p>
             </>
           )}
           {compact && subtitle ? (

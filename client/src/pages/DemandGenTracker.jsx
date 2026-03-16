@@ -32,6 +32,9 @@ export default function DemandGenTracker({ deals, fetchedAt }) {
           <p className="mt-1 text-sm text-gray-500">
             Weekly pacing vs goals for US and India. Current = stage entries in-quarter; Δ Week = entries in the selected week.
           </p>
+          <p className="mt-2 text-sm text-gray-500">
+            Read by row (lead source) → across SQL, SAL, MQL. Each stage shows Goal, Current, and Δ Week.
+          </p>
         </div>
       </div>
 
