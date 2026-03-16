@@ -121,17 +121,14 @@ function getMomentum(delta) {
   return 'Flat';
 }
 
-function dealInStageAsOf(deal, stageId, asOfEnd) {
+// Count a deal once it has reached a stage (even if it later moved out).
+function dealReachedStageBy(deal, stageId, asOfEnd) {
   const stageHistory = deal.stageHistory ?? {};
   const entry = stageHistory?.[stageId]?.entered ?? null;
   if (entry) {
     const enteredAt = new Date(entry);
     if (Number.isNaN(enteredAt.getTime()) || enteredAt > asOfEnd) return false;
-    const exitRaw = stageHistory?.[stageId]?.exited ?? null;
-    if (!exitRaw) return true;
-    const exitedAt = new Date(exitRaw);
-    if (Number.isNaN(exitedAt.getTime())) return true;
-    return exitedAt > asOfEnd;
+    return true;
   }
 
   if (deal.dealstage !== stageId) return false;
@@ -148,8 +145,8 @@ function buildNormalizedCells({ deals, targets, asOfEnd, priorAsOfEnd }) {
       const goal = targets?.[source.key]?.[stage.key] ?? 0;
       const stageId = STAGE_ID_MAP[stage.key];
       const sourceDeals = deals.filter((deal) => deal.acquisitionChannel === source.key);
-      const currentDeals = sourceDeals.filter((deal) => dealInStageAsOf(deal, stageId, asOfEnd));
-      const priorDeals = sourceDeals.filter((deal) => dealInStageAsOf(deal, stageId, priorAsOfEnd));
+      const currentDeals = sourceDeals.filter((deal) => dealReachedStageBy(deal, stageId, asOfEnd));
+      const priorDeals = sourceDeals.filter((deal) => dealReachedStageBy(deal, stageId, priorAsOfEnd));
       const current = currentDeals.length;
       const priorWeekValue = priorDeals.length;
       const weeklyDelta = current - priorWeekValue;
@@ -424,7 +421,7 @@ export default function DemandGenWeeklyTargetTracker({
                 Goals, current volume, and weekly deltas by source
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Current-quarter pacing for {quarterLabel}. Columns show goal, current count, and week-over-week delta for MQL, SAL, and SQL. Excludes Partnership.
+                Current-quarter pacing for {quarterLabel}. “Current” is the total deals that have reached the stage by the as‑of date, regardless of their current stage.
               </p>
             </>
           )}
