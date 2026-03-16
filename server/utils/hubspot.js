@@ -36,6 +36,29 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function parseHubspotDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  }
+  if (typeof value === 'number') {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const numeric = Number(trimmed);
+    if (Number.isFinite(numeric)) {
+      const date = new Date(numeric);
+      return Number.isNaN(date.getTime()) ? null : date.toISOString();
+    }
+    const date = new Date(trimmed);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
+  return null;
+}
+
 async function fetchPageWithRetry(client, after, retries = 0) {
   try {
     const response = await client.crm.deals.basicApi.getPage(
@@ -120,8 +143,8 @@ export async function fetchAllDeals(accessToken, ownerMap = {}) {
           .find((val) => val != null && String(val).trim() !== '') ?? null;
       const industry = resolveIndustry(industryRaw);
       const stageHistory = STAGE_IDS.reduce((acc, id) => {
-        const entered = props[`hs_date_entered_${id}`] ?? null;
-        const exited = props[`hs_date_exited_${id}`] ?? null;
+        const entered = parseHubspotDate(props[`hs_date_entered_${id}`]);
+        const exited = parseHubspotDate(props[`hs_date_exited_${id}`]);
         if (entered || exited) {
           acc[id] = { entered, exited };
         }
@@ -134,9 +157,9 @@ export async function fetchAllDeals(accessToken, ownerMap = {}) {
         dealstage: props.dealstage ?? '',
         pipeline: props.pipeline ?? '',
         amount: props.amount ? parseFloat(props.amount) : null,
-        createdate: props.createdate ?? null,
-        closedate: props.closedate ?? null,
-        hs_lastmodifieddate: props.hs_lastmodifieddate ?? null,
+        createdate: parseHubspotDate(props.createdate),
+        closedate: parseHubspotDate(props.closedate),
+        hs_lastmodifieddate: parseHubspotDate(props.hs_lastmodifieddate),
         hubspot_owner_id: props.hubspot_owner_id ?? null,
         ownerName: ownerMap[props.hubspot_owner_id] ?? props.hubspot_owner_id ?? '—',
         geoRaw,
