@@ -10,9 +10,9 @@ const SOURCE_ROWS = [
 const INCLUDED_SOURCE_KEYS = new Set(SOURCE_ROWS.map((source) => source.key));
 
 const STAGE_COLUMNS = [
-  { key: 'MQL', label: 'MQL', accent: 'text-emerald-700', progress: 'bg-emerald-500' },
-  { key: 'SAL', label: 'SAL', accent: 'text-violet-700', progress: 'bg-violet-500' },
   { key: 'SQL', label: 'SQL', accent: 'text-orange-700', progress: 'bg-orange-500' },
+  { key: 'SAL', label: 'SAL', accent: 'text-violet-700', progress: 'bg-violet-500' },
+  { key: 'MQL', label: 'MQL', accent: 'text-emerald-700', progress: 'bg-emerald-500' },
 ];
 
 const STATUS_STYLES = {
