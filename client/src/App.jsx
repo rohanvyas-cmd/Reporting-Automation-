@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Summary from './pages/Summary.jsx';
 import DealDetails from './pages/DealDetails.jsx';
-import DemandGenTracker from './pages/DemandGenTracker.jsx';
 import InsightsPage from './pages/InsightsPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import Spinner from './components/Spinner.jsx';
@@ -11,7 +10,7 @@ import { useAuth } from './hooks/useAuth.js';
 import logoImage from './assets/image.png';
 import { useState } from 'react';
 
-const TABS = ['Demand Gen Tracker', 'Pipeline Summary', 'Deals'];
+const TABS = ['Pipeline Summary', 'Deals'];
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
 
 function Dashboard() {
@@ -123,9 +122,6 @@ function Dashboard() {
             )}
             {activeTab === 'Deals' && (
               <DealDetails deals={deals} />
-            )}
-            {activeTab === 'Demand Gen Tracker' && (
-              <DemandGenTracker deals={deals} fetchedAt={fetchedAt} />
             )}
           </>
         )}
