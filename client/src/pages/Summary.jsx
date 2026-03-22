@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import GeoToggle from '../components/GeoToggle.jsx';
 import { buildChannelSummary, buildDashboardMetrics, buildIndustrySummary, CHANNEL_COLORS } from '../utils/dashboardMetrics.js';
 import VolumeWinChart from '../components/VolumeWinChart.jsx';
-import DemandGenWeeklyTargetTracker from '../components/DemandGenWeeklyTargetTracker.jsx';
 const PHASE_ROWS = [
   { key: 'Created', label: 'Deals Created', color: '#2563eb' },
   { key: 'MQL_PLUS', label: 'Initial Interest / MQL++', color: '#16a34a' },
@@ -310,32 +309,6 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
       metrics: allTimeMetrics,
     };
   }, [kpiMode, quarterLabel, quarterSummary, quarterMetrics, allTimeSummary, allTimeMetrics]);
-  const demandGenDealsByGeo = useMemo(
-    () => ({
-      US: deals.filter((deal) => deal.geography === 'US'),
-      India: deals.filter((deal) => deal.geography === 'India'),
-    }),
-    [deals]
-  );
-  const demandGenSections = useMemo(() => {
-    if (geo === 'All') {
-      return [
-        { geo: 'US', title: 'US', deals: demandGenDealsByGeo.US },
-        { geo: 'India', title: 'India', deals: demandGenDealsByGeo.India },
-      ];
-    }
-    return [{ geo, title: geo, deals: filtered }];
-  }, [geo, filtered, demandGenDealsByGeo]);
-  const { demandGenWeekStartLabel, demandGenWeekEndLabel } = useMemo(() => {
-    const end = new Date();
-    const start = new Date(end);
-    start.setDate(end.getDate() - 6);
-    start.setHours(0, 0, 0, 0);
-    return {
-      demandGenWeekStartLabel: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      demandGenWeekEndLabel: end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    };
-  }, []);
   const winRateExact = kpi.summary.total
     ? (kpi.summary['Deal Won'] / kpi.summary.total) * 100
     : 0;
@@ -461,38 +434,6 @@ export default function Summary({ deals, geo, onGeoChange, fetchedAt }) {
                 counts={quarterStageCounts}
                 scaleMax={stageScaleMax}
               />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                    Demand Gen Tracker
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Weekly stage entries for the selected geography.
-                  </p>
-                </div>
-                <div className="text-xs text-slate-500">
-                  Week {demandGenWeekStartLabel}–{demandGenWeekEndLabel}
-                </div>
-              </div>
-              <div className={`mt-4 grid grid-cols-1 gap-5 ${geo === 'All' ? 'xl:grid-cols-2' : ''}`}>
-                {demandGenSections.map((section) => (
-                  <DemandGenWeeklyTargetTracker
-                    key={section.geo}
-                    deals={section.deals}
-                    geo={section.geo}
-                    quarterLabel={quarterLabel}
-                    quarterStart={qStart}
-                    quarterEnd={qEnd}
-                    fetchedAt={fetchedAt}
-                    title={section.title}
-                    subtitle={`Week ${demandGenWeekStartLabel}–${demandGenWeekEndLabel} (${quarterLabel}). Current = stage entries since quarter start; Δ Week = entries in that week.`}
-                    compact
-                  />
-                ))}
-              </div>
             </div>
           </div>
         ) : effectiveTab === 'channels' ? (

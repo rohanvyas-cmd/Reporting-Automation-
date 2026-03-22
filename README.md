@@ -127,31 +127,58 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
-## Deployment (Railway + Vercel)
+## Deployment (GCP)
 
-### 1) Deploy the backend to Railway
-1. Create a new Railway project from this GitHub repo.
-2. Set the **root directory** to `server`.
-3. Set the **start command** to `npm start`.
-4. Add environment variables:
+### Recommended layout
+- **Backend:** Cloud Run
+- **Frontend:** Firebase Hosting or another static host in GCP
+
+This repo already fits that model:
+- The backend is a plain Express app that listens on `process.env.PORT`.
+- The frontend reads `VITE_API_BASE_URL` at build time.
+
+### 1) Deploy the backend to Cloud Run
+1. Create or select a Google Cloud project.
+2. Enable the required APIs: Cloud Run, Cloud Build, and Artifact Registry.
+3. Deploy the `server` directory as a Cloud Run service.
+
+Example:
+```bash
+gcloud run deploy gtm-dashboard-api \
+  --source ./server \
+  --region us-central1 \
+  --allow-unauthenticated
+```
+
+4. Add these environment variables or secrets in Cloud Run:
    - `HUBSPOT_ACCESS_TOKEN`
    - `GOOGLE_CLIENT_ID`
    - `JWT_SECRET`
    - `ALLOWED_EMAILS` (comma-separated)
-   - `CORS_ORIGINS` (your Vercel domain, e.g. `https://your-app.vercel.app`)
-5. Deploy and copy the public Railway URL.
+   - `CORS_ORIGINS` (your frontend origin, e.g. `https://your-site.web.app`)
+5. Copy the Cloud Run service URL.
 
-### 2) Deploy the frontend to Vercel
-1. Import the repo into Vercel.
-2. Set the **root directory** to `client`.
-3. Add environment variables:
-   - `VITE_GOOGLE_CLIENT_ID`
-   - `VITE_API_BASE_URL` (your Railway URL, e.g. `https://your-app.up.railway.app`)
-4. Build command: `npm run build`
-5. Output directory: `dist`
-6. Deploy.
+### 2) Deploy the frontend to Firebase Hosting
+1. Set the client env vars for production:
+   - `VITE_GOOGLE_CLIENT_ID` should match the backend `GOOGLE_CLIENT_ID`
+   - `VITE_API_BASE_URL` should be the Cloud Run URL from step 1
+2. Build the client:
+```bash
+npm run build --prefix client
+```
+3. Deploy the `client/dist` output with Firebase Hosting.
 
-### 3) Verify
-1. Open the Vercel URL.
-2. Sign in via Google.
-3. Click **Refresh Data** to confirm the Railway API is reachable.
+If you use Firebase Hosting, make sure the site rewrites all routes to `index.html` so the SPA works on refresh.
+
+### 3) Update Google OAuth
+1. In Google Cloud Console, open the OAuth client used by the app.
+2. Add your production frontend domain to the authorized JavaScript origins.
+3. Keep local dev origins too, such as `http://localhost:5173`.
+
+### 4) Verify
+1. Open the frontend URL.
+2. Sign in with Google.
+3. Click **Refresh Data** and confirm the Cloud Run API responds.
+
+### Optional: single-service deployment
+If you want everything behind one GCP service, I can add a small Dockerfile and static file serving so Cloud Run hosts both the API and the built React app. That is a clean next step, but it is not required for the migration.
