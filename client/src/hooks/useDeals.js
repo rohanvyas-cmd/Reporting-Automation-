@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getToken } from './useAuth.js';
 import { apiPath } from '../utils/api.js';
+import { readJsonResponse } from '../utils/json.js';
 
 export function useDeals() {
   const [deals, setDeals] = useState([]);
@@ -17,7 +18,7 @@ export function useDeals() {
       const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       if (!res.ok) throw new Error(data.error ?? 'Failed to fetch deals');
       setDeals(data.deals ?? []);
       setFetchedAt(data.fetchedAt ? new Date(data.fetchedAt) : new Date());

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiPath } from '../utils/api.js';
+import { readJsonResponse } from '../utils/json.js';
 
 const TOKEN_KEY = 'gtm_auth_token';
 const USER_KEY = 'gtm_auth_user';
@@ -45,7 +46,7 @@ export function useAuth() {
       body: JSON.stringify({ idToken: googleIdToken }),
     });
 
-    const data = await res.json();
+    const data = await readJsonResponse(res);
 
     if (!res.ok) {
       throw new Error(data.error ?? 'Sign-in failed');
